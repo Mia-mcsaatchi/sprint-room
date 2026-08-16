@@ -49,11 +49,20 @@ def main():
     up = a.unpacked
     ndir = f'{up}/ppt/notesSlides'
     existing = glob.glob(f'{ndir}/notesSlide*.xml')
-    template = a.template_notes and f'{ndir}/{a.template_notes}' or (existing[0] if existing else None)
-    if not template or not os.path.exists(template):
-        raise SystemExit('No template notesSlide found to clone')
-    nums = [int(re.search(r'notesSlide(\d+)\.xml', p).group(1)) for p in existing]
-    new_n = max(nums) + 1
+    srels_path = f'{up}/ppt/slides/_rels/{a.target_slide}.rels'
+    srels = open(srels_path, encoding='utf-8').read()
+    # idempotent: if the slide already links a notesSlide, rewrite THAT one in place
+    cur = re.search(r'notesSlides/(notesSlide\d+)\.xml', srels)
+    reuse = bool(cur)
+    if reuse:
+        new_n = int(re.search(r'\d+', cur.group(1)).group(0))
+        template = f'{ndir}/notesSlide{new_n}.xml'
+    else:
+        template = a.template_notes and f'{ndir}/{a.template_notes}' or (existing[0] if existing else None)
+        if not template or not os.path.exists(template):
+            raise SystemExit('No template notesSlide found to clone')
+        nums = [int(re.search(r'notesSlide(\d+)\.xml', p).group(1)) for p in existing]
+        new_n = max(nums) + 1
     xml = open(template, encoding='utf-8').read()
 
     # replace the body placeholder's paragraphs
@@ -76,16 +85,17 @@ def main():
     open(f'{ndir}/_rels/notesSlide{new_n}.xml.rels', 'w', encoding='utf-8').write(
         '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + ''.join(rel_lines) + '</Relationships>')
 
-    # Content-Types override
+    # Content-Types override (only when creating a new part)
     ct_path = f'{up}/[Content_Types].xml'
     ct = open(ct_path, encoding='utf-8').read()
     ov = f'<Override PartName="/ppt/notesSlides/notesSlide{new_n}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>'
     if ov not in ct:
         ct = ct.replace('</Types>', ov + '</Types>'); open(ct_path, 'w', encoding='utf-8').write(ct)
 
+    if reuse:
+        print(f"Rewrote existing notesSlide{new_n}.xml on {a.target_slide}; {len(rels)} note hyperlink(s)")
+        return
     # link into the target slide's rels with a fresh rId
-    srels_path = f'{up}/ppt/slides/_rels/{a.target_slide}.rels'
-    srels = open(srels_path, encoding='utf-8').read()
     used = [int(x) for x in re.findall(r'Id="rId(\d+)"', srels)]
     nrid = f'rId{max(used)+1 if used else 1}'
     add = f'<Relationship Id="{nrid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="../notesSlides/notesSlide{new_n}.xml"/>'
