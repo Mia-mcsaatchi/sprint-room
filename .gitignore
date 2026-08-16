@@ -20,3 +20,8 @@ __pycache__/
 
 # --- Per-cycle deliverables (kept out of the knowledge repo) ---
 *_Sprint_Room.pptx
+
+# --- Monthly-run generated work + per-cycle client inputs ---
+monthly-run/work/
+monthly-run/inputs/*
+!monthly-run/inputs/README.md

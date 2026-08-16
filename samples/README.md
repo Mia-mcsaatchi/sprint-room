@@ -16,16 +16,16 @@ From an Explorer (EU7) April-2026 cycle:
 
 ## `raw_export_SAMPLE_schema_only.xlsx`
 
-A schema-only slice of a real "Bulk Mentions Download" raw export: the metadata block, the full
-**186-column** header, and 15 data rows. Derived from a 9.1MB original — kept small on purpose.
+**Table structure only** — the metadata block + the full **186-column** header, with **no data
+rows**. Raw data changes every month and isn't the point; the column layout is. Column meanings
+and example values are documented in
+[`../docs/data-dictionary.md`](../docs/data-dictionary.md).
 
-> Note: this sample was re-saved, so it reads cleanly with any tool. Real BW exports use inline
-> strings and need [`../tools/bw_read.py`](../tools/bw_read.py) — see
-> [`../docs/tooling-patterns.md`](../docs/tooling-patterns.md).
+> Real BW exports use inline strings and need [`../tools/bw_read.py`](../tools/bw_read.py) to
+> read (openpyxl returns blanks) — see [`../docs/tooling-patterns.md`](../docs/tooling-patterns.md).
 
 Try:
 
 ```bash
-python3 ../tools/bw_read.py raw_export_SAMPLE_schema_only.xlsx --querydist
 python3 ../tools/bw_read.py chart-exports/chart_volume_monthsxqueries.xlsx --head 14
 ```

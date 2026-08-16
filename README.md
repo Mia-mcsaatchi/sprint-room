@@ -12,12 +12,35 @@ can be handed over or migrated without knowledge living only in someone's head.
 
 | Path | What it is |
 |------|-----------|
+| [`monthly-run/`](monthly-run/) | **Run this monthly.** Orchestrator (`run.py`) + [`RUNBOOK.md`](monthly-run/RUNBOOK.md) + per-carline [`config`](monthly-run/config/carlines.json) that drives a full cycle |
 | [`docs/`](docs/) | The knowledge base — process, standards, calculations, slide configs, tooling patterns, data dictionary, glossary |
-| [`skills/`](skills/) | The automation **skills** verbatim (SKILL.md + scripts + references) |
+| [`skills/`](skills/) | The automation **skills** verbatim (SKILL.md + scripts + references) — the engine `monthly-run` calls |
 | [`process/`](process/) | Source-of-truth documents: the 6-phase process doc + the automation architecture PDF |
-| [`samples/`](samples/) | Small real fixtures: the four chart-data exports + a schema-only raw-export sample |
+| [`samples/`](samples/) | Small fixtures showing **table structure** (not datasets): the four chart-data exports + a structure-only raw-export header |
 | [`tools/`](tools/) | Reusable utilities (e.g. `bw_read.py`, the reliable Brandwatch parser) |
 | [`MIGRATION.md`](MIGRATION.md) | How to stand this up on a new machine / onboard a new analyst |
+
+## Running a month (the point of this repo)
+
+```bash
+cd monthly-run
+python3 run.py newmonth --carline Kuga --month 2026-07   # scaffold + list the 6 files to drop in
+python3 run.py doctor   --carline Kuga --month 2026-07   # confirm inputs
+python3 run.py validate --carline Kuga --month 2026-07
+python3 run.py menu     --carline Kuga --month 2026-07   # ← approve the bullet menu (hard gate)
+python3 run.py skeleton --carline Kuga --month 2026-07 --report-date 17.08.2026
+python3 run.py fixskeleton --carline Kuga --month 2026-07
+python3 run.py roles    --carline Kuga --month 2026-07   # config vs. real chart order
+python3 run.py charts   --carline Kuga --month 2026-07
+python3 run.py bullets  --carline Kuga --month 2026-07
+python3 run.py embed    --carline Kuga --month 2026-07
+python3 run.py pack     --carline Kuga --month 2026-07   # → the delivered .pptx
+```
+
+Full step-by-step (incl. the manual Brandwatch/Sheets phases) is in
+[`monthly-run/RUNBOOK.md`](monthly-run/RUNBOOK.md). Client exports live under
+`monthly-run/inputs/` and are git-ignored — **only table structure is committed, never the
+monthly dataset.**
 
 ## The 30-second mental model
 

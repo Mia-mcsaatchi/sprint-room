@@ -1,0 +1,35 @@
+{
+  "_comment": "Per-carline config for the monthly Sprint Room run. chart_roles maps a role to the chartN.xml the skeleton builder produces for the NEW month's slide (skill duplicates last month's charts into 9-12). Verify against the actual deck when verify_chart_roles is true. See ../../docs/slide-configs.md.",
+  "Explorer": {
+    "segment": "EU7",
+    "competitors": ["Skoda Enyaq", "VW ID.4", "Renault Megane E-Tech", "Peugeot E-3008", "Volvo XC40 Recharge/EX40"],
+    "chart_roles": {"volume": "chart9", "country": "chart10", "sentiment": "chart11", "platform": "chart12"},
+    "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
+    "verify_chart_roles": false,
+    "notes": "Original template; the skill's documented default order."
+  },
+  "Kuga": {
+    "segment": "EU5",
+    "competitors": ["Dacia Bigster", "Jaecoo 7", "Hyundai Tucson", "Peugeot 3008", "VW Tiguan"],
+    "chart_roles": {"volume": "chart9", "country": "chart10", "platform": "chart11", "sentiment": "chart12"},
+    "sentiment_series_casing": {"positive_pre": "Positive Pre", "negative_pre": "Negative Pre"},
+    "verify_chart_roles": false,
+    "notes": "EU5. build_skeleton hardcodes EU7 in the subtitle regex - fix subtitle manually. Sentiment series names are Capitalised ('Positive Pre'/'Negative Pre')."
+  },
+  "Capri": {
+    "segment": "EU7",
+    "competitors": ["Peugeot E-3008", "VW ID.5", "Skoda Enyaq Coupe", "Polestar 2", "Audi Q4 Sportback e-tron", "Kia EV6"],
+    "chart_roles": {"volume": "chart9", "platform": "chart10", "country": "chart11", "sentiment": "chart12"},
+    "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
+    "verify_chart_roles": false,
+    "notes": "EU7; 6 competitors. Watch the towing-PR NEAR/5 query asymmetry vs Explorer."
+  },
+  "Puma": {
+    "segment": "EU5",
+    "competitors": ["Peugeot 2008", "Toyota Yaris Cross", "Hyundai Kona", "VW T-Cross"],
+    "chart_roles": {"volume": "chart9", "country": "chart10", "platform": "chart11", "sentiment": "chart12"},
+    "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
+    "verify_chart_roles": true,
+    "notes": "EU5; 4 competitors (NOT 6). Chart order is known to be swapped from the Explorer template (source deck has platform/sentiment in different positions). The chart_roles above are a PLACEHOLDER - run `roles` to confirm against the real skeleton before running `charts`. build_skeleton EU7 subtitle bug applies here too."
+  }
+}
