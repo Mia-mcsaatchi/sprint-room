@@ -243,10 +243,23 @@ def stage_charts(a):
 
 def stage_bullets(a):
     _, work = paths(a.carline, a.month)
-    menu = work / "menu.md"
+    yr, mm, _ = month_parts(a.month)
+    # prefer the analyst-approved menu (write_bullets format) if present
+    menu = work / "menu_confirmed.md"
+    if not menu.exists():
+        menu = work / "menu.md"
     if not a.dry_run:
-        need(menu, "approved bullet menu (run `menu` and approve it first)")
-    slide = work / "skeleton" / "unpacked" / "ppt" / "slides" / a.slide
+        need(menu, "approved bullet menu (menu_confirmed.md or menu.md)")
+    # auto-detect the new-month slide (raw-only layouts vary); fall back to --slide
+    up = work / "skeleton" / "unpacked"
+    slide = up / "ppt" / "slides" / a.slide
+    if not a.dry_run and up.exists():
+        want = f"{MONTHS[mm]} {yr}".lower()
+        import glob as _g
+        for s in _g.glob(str(up / "ppt" / "slides" / "slide*.xml")):
+            txt = Path(s).read_text(encoding="utf-8", errors="replace").lower()
+            if want in txt and "volume" in txt:
+                slide = Path(s); break
     cmd = ["python3", SCRIPTS / "write_bullets.py", slide, "--menu", menu]
     return run(cmd, a.dry_run)
 
@@ -258,14 +271,112 @@ def stage_embed(a):
     return run(cmd, a.dry_run)
 
 def stage_pack(a):
-    _, work = paths(a.carline, a.month)
+    inp, work = paths(a.carline, a.month)
     yr, mm, _ = month_parts(a.month)
     out = work / f"{a.carline}_Social_Media_{MONTHS[mm]}_{yr}_Sprint_Room.pptx"
     cmd = ["python3", SCRIPTS / "pack_and_qa.py", work / "skeleton" / "unpacked", out]
+    if (inp / "last_month.pptx").exists():
+        cmd += ["--original", inp / "last_month.pptx"]
     rc = run(cmd, a.dry_run)
     if rc == 0 and not a.dry_run:
         say(f"\nBuilt: {out}", "g")
         say("QA it (render to PDF), then deliver per docs/workflow-phases.md Phase 6.", "g")
+    return rc
+
+
+# ---------- raw-only path (raw.xlsx + last_month.pptx only; no manual chart exports) ----------
+def _carline_query(a):
+    return getattr(a, "carline_query", None) or f"Ford {a.carline}"
+
+def stage_clean(a):
+    """Clean the raw feed (drop false/off-topic, retag passing) -> cleaning_menu.md for sign-off."""
+    inp, work = paths(a.carline, a.month); work.mkdir(parents=True, exist_ok=True)
+    cmd = ["python3", SCRIPTS / "clean_raw.py", "--carline", a.carline, "--month", a.month,
+           "--raw", inp / "raw.xlsx", "--out", work / "cleaning_menu.md"]
+    if a.also: cmd += ["--also", *a.also]
+    if a.retag_passing: cmd += ["--retag-passing"]
+    return run(cmd, a.dry_run)
+
+def stage_derive(a):
+    """Derive the 4 chart tables from cleaned raw + last_month deck (writes chart_*.xlsx to inputs)."""
+    inp, _ = paths(a.carline, a.month)
+    cmd = ["python3", SCRIPTS / "derive_charts.py", "--carline", a.carline, "--month", a.month,
+           "--raw", inp / "raw.xlsx", "--last-month", inp / "last_month.pptx",
+           "--carline-query", _carline_query(a), "--outdir", inp]
+    if a.also: cmd += ["--also", *a.also]
+    if a.retag_passing: cmd += ["--retag-passing"]
+    return run(cmd, a.dry_run)
+
+def stage_rawmenu(a):
+    """Bullet menu from CLEANED raw (raw-only replacement for `menu`). HARD GATE."""
+    inp, work = paths(a.carline, a.month); work.mkdir(parents=True, exist_ok=True)
+    menu = work / "menu.md"
+    cmd = ["python3", SCRIPTS / "build_menu.py", "--carline", a.carline, "--month", a.month,
+           "--raw", inp / "raw.xlsx", "--carline-query", _carline_query(a), "--out", menu]
+    if a.also: cmd += ["--also", *a.also]
+    rc = run(cmd, a.dry_run)
+    if rc == 0 and not a.dry_run:
+        say("\nHARD GATE: review & approve menu.md, then `skeletonraw`.", "y")
+    return rc
+
+def stage_skeletonraw(a):
+    """Layout-agnostic skeleton (clones the reported slide + its charts, drops the oldest)."""
+    inp, work = paths(a.carline, a.month)
+    yr, mm, _ = month_parts(a.month)
+    report_date = a.report_date or date.today().strftime("%d.%m.%Y")
+    c = cfg(a.carline)
+    cmd = ["python3", SCRIPTS / "build_skeleton_raw.py", "--last-month", inp / "last_month.pptx",
+           "--carline", a.carline, "--segment", c["segment"], "--new-month", f"{MONTHS[mm]} {yr}",
+           "--report-date", report_date, "--out", work / "skeleton"]
+    return run(cmd, a.dry_run)
+
+def _newslide_roles(unpacked, new_month_name):
+    """Return {role: chartpath} for the skeleton's NEW-month slide (by subtitle month)."""
+    import glob as _g
+    up = str(unpacked)
+    target = None
+    for s in _g.glob(f"{up}/ppt/slides/slide*.xml"):
+        if new_month_name.lower() in Path(s).read_text(encoding="utf-8", errors="replace").lower():
+            rels = Path(f"{up}/ppt/slides/_rels/{Path(s).name}.rels")
+            if rels.exists() and "charts/chart" in rels.read_text():
+                target = rels; break
+    if not target: return {}
+    roles = {}
+    for cn in re.findall(r'charts/(chart\d+\.xml)', target.read_text()):
+        x = Path(f"{up}/ppt/charts/{cn}").read_text(encoding="utf-8", errors="replace")
+        types = re.findall(r'<c:(barChart|lineChart|pieChart|scatterChart)>', x)
+        sn = [t.lower() for t in re.findall(r'<c:tx>.*?<c:v>([^<]*)</c:v>', x, re.S)]
+        cm = re.search(r'<c:cat>(.*?)</c:cat>', x, re.S)
+        cats = re.findall(r'<c:v>([^<]*)</c:v>', cm.group(1)) if cm else []
+        if "scatterChart" in types or any(t in ("positive","neutral","negative") for t in sn): role="sentiment"
+        elif "lineChart" in types: role="volume"
+        elif "pieChart" in types:
+            j=" ".join(cats).lower()
+            role = "platform" if (any(w in j for w in ["news","forum","blog","tumblr","review"]) or " x " in f" {j} ") else "country"
+        else: role="unknown"
+        roles[role] = f"{up}/ppt/charts/{cn}"
+    return roles
+
+def stage_chartsraw(a):
+    """Update the new slide's 4 charts from derived tables (role-detected; sentiment reads prior by role)."""
+    inp, work = paths(a.carline, a.month)
+    yr, mm, prior = month_parts(a.month)
+    up = work / "skeleton" / "unpacked"
+    roles = _newslide_roles(up, f"{MONTHS[mm]} {yr}")
+    need_roles = {"volume","country","platform","sentiment"}
+    if not need_roles <= set(roles):
+        sys.exit(f"Could not detect all chart roles on the new slide (got {roles}). Run `skeletonraw` first.")
+    say(f"New-slide chart roles: { {k: Path(v).name for k,v in roles.items()} }", "b")
+    cmds = [
+        ["python3", SCRIPTS/"update_volume_chart.py",  roles["volume"],  "--vol", inp/"chart_volume.xlsx"],
+        ["python3", SCRIPTS/"update_country_chart.py", roles["country"], "--country", inp/"chart_country.xlsx"],
+        ["python3", SCRIPTS/"update_platform_chart.py",roles["platform"],"--platform", inp/"chart_platform.xlsx"],
+        ["python3", SCRIPTS/"update_sentiment_chart.py", roles["sentiment"],
+         "--new-month-sent", inp/"chart_sentiment.xlsx", "--prior-from-last-month", inp/"last_month.pptx",
+         "--prior-month-name", MONTHS[prior]],
+    ]
+    rc = 0
+    for cmd in cmds: rc = run(cmd, a.dry_run) or rc
     return rc
 
 
@@ -274,6 +385,9 @@ STAGES = {
     "menu": stage_menu, "skeleton": stage_skeleton, "fixskeleton": stage_fixskeleton,
     "roles": stage_roles, "charts": stage_charts, "bullets": stage_bullets,
     "embed": stage_embed, "pack": stage_pack,
+    # raw-only path:
+    "clean": stage_clean, "derive": stage_derive, "rawmenu": stage_rawmenu,
+    "skeletonraw": stage_skeletonraw, "chartsraw": stage_chartsraw,
 }
 
 
@@ -286,6 +400,12 @@ def main():
     ap.add_argument("--slide", default="slide4.xml", help="slide XML for bullets (default slide4.xml)")
     ap.add_argument("--i-verified-roles", action="store_true",
                     help="assert chart roles were confirmed for a verify-flagged carline")
+    ap.add_argument("--carline-query", default=None,
+                    help="raw-only: the raw Query Name for the carline (default 'Ford <carline>')")
+    ap.add_argument("--also", nargs="*", default=[],
+                    help="raw-only: extra raw export(s) to merge (adds only queries missing from --raw)")
+    ap.add_argument("--retag-passing", action="store_true",
+                    help="raw-only clean: promote carline news/blog passing pos/neg to neutral (else REVIEW)")
     ap.add_argument("--dry-run", action="store_true", help="print commands without running them")
     a = ap.parse_args()
     cfg(a.carline)  # validate carline early
