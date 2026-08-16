@@ -380,6 +380,38 @@ def stage_chartsraw(a):
     return rc
 
 
+def _new_slide_name(work, mm, yr):
+    """Filename of the new-month slide in the skeleton (matches subtitle month + has charts)."""
+    import glob as _g
+    up = work / "skeleton" / "unpacked"
+    want = f"{MONTHS[mm]} {yr}".lower()
+    for s in _g.glob(str(up / "ppt" / "slides" / "slide*.xml")):
+        txt = Path(s).read_text(encoding="utf-8", errors="replace").lower()
+        if want in txt and "volume" in txt:
+            return Path(s).name
+    return None
+
+def stage_embedraw(a):
+    """Write the new-month values into each chart's OWN backing xlsx (Edit-Data linked)."""
+    _, work = paths(a.carline, a.month)
+    yr, mm, _ = month_parts(a.month)
+    slide = _new_slide_name(work, mm, yr) or a.slide
+    cmd = ["python3", SCRIPTS / "link_embeddings.py", work / "skeleton" / "unpacked", "--slide", slide]
+    return run(cmd, a.dry_run)
+
+def stage_notes(a):
+    """Attach a speaker-notes slide (overflow) to the new slide from work/.../notes.md."""
+    _, work = paths(a.carline, a.month)
+    yr, mm, _ = month_parts(a.month)
+    notes = work / "notes.md"
+    if not a.dry_run:
+        need(notes, "notes.md (overflow: country/platform breakdowns, competitor caveats)")
+    slide = _new_slide_name(work, mm, yr) or a.slide
+    cmd = ["python3", SCRIPTS / "write_notes.py", work / "skeleton" / "unpacked",
+           "--target-slide", slide, "--notes", notes]
+    return run(cmd, a.dry_run)
+
+
 STAGES = {
     "newmonth": stage_newmonth, "doctor": stage_doctor, "validate": stage_validate,
     "menu": stage_menu, "skeleton": stage_skeleton, "fixskeleton": stage_fixskeleton,
@@ -388,6 +420,7 @@ STAGES = {
     # raw-only path:
     "clean": stage_clean, "derive": stage_derive, "rawmenu": stage_rawmenu,
     "skeletonraw": stage_skeletonraw, "chartsraw": stage_chartsraw,
+    "embedraw": stage_embedraw, "notes": stage_notes,
 }
 
 

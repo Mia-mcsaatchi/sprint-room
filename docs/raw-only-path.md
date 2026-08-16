@@ -31,7 +31,10 @@ python3 run.py rawmenu    --carline Puma --month 2026-07     # → work/.../menu
 #   save approved bullets as work/.../menu_confirmed.md (write_bullets format: ## bullet1 …)
 python3 run.py skeletonraw --carline Puma --month 2026-07 --report-date DD.MM.YYYY
 python3 run.py chartsraw  --carline Puma --month 2026-07     # updates the new slide's 4 charts (role-detected)
+python3 run.py embedraw   --carline Puma --month 2026-07     # write new-month values into each chart's own backing xlsx (Edit-Data linked)
 python3 run.py bullets    --carline Puma --month 2026-07     # uses menu_confirmed.md, auto-finds the new slide
+#   author work/.../notes.md (overflow: country/platform breakdowns, competitor caveats)
+python3 run.py notes      --carline Puma --month 2026-07     # attach a speaker-notes slide to the new slide
 python3 run.py pack       --carline Puma --month 2026-07     # zip + validate + best-effort PDF/PNG QA
 ```
 
@@ -45,8 +48,10 @@ Add `--also other_raw.xlsx` to any of `clean`/`derive`/`rawmenu` to **merge** a 
 | `clean` | `clean_raw.py` | Drops false-brand/off-topic rows, retags passing/other-model → neutral, flags the rest REVIEW. Writes a line-by-line `cleaning_menu.md` for sign-off. **Nothing is dropped silently.** |
 | `derive` | `derive_charts.py` | Reconstructs `chart_volume/country/platform/sentiment.xlsx` in Brandwatch export format from the **cleaned** raw + last month's deck. |
 | `rawmenu` | `build_menu.py` | Volume/sentiment MoM, story clusters, country/platform breakdowns from cleaned raw → the bullet-menu **hard gate**. |
-| `skeletonraw` | `build_skeleton_raw.py` | Layout-agnostic skeleton: clones the reported-month slide **and its four charts** (own copies), drops the oldest month, fixes all package bookkeeping. |
+| `skeletonraw` | `build_skeleton_raw.py` | Layout-agnostic skeleton: clones the reported-month slide **and its four charts** (own colors/style/themeOverride/embedding copies), drops the oldest month, fixes all package bookkeeping. |
 | `chartsraw` | `update_*_chart.py` | Updates the new slide's four charts, located **by role** (not by fixed chart number). |
+| `embedraw` | `link_embeddings.py` | Writes the new-month values into each chart's **own** backing workbook by reading its `<c:f>` refs + cache, so "Edit Data in Excel" matches the chart; the volume Average is written as a live `=AVERAGE()` formula. |
+| `notes` | `write_notes.py` | Clones a template notes-slide, swaps in `work/.../notes.md` (overflow per editorial-standards.md), and wires it to the new slide. |
 
 ## Cleaning policy (the £100 rule, per carline)
 
@@ -99,7 +104,6 @@ Keyword lists live in `clean_raw.py` (`FALSE_BY_CARLINE`, `MODEL_KW`, `STRONG_KW
 
 ## What this path does NOT do
 
-- It does not embed *new* editable backing xlsx (`embed` stage). The charts render from cached
-  values; "Edit Data in Excel" opens the carried-forward backing file. Run `embed` separately if
-  the client needs fresh editable data (mind the corruption pitfalls in `embed_xlsx_pitfalls.md`).
 - Phases 1/3/4/6 (boolean cleaning, Brandwatch retag, Sheets pivots, Trello/email) remain manual.
+- The old Explorer-specific `embed_backing_xlsx.py` is superseded by `embedraw`/`link_embeddings.py`
+  for this path (layout-agnostic, reads each chart's own `<c:f>` refs).
