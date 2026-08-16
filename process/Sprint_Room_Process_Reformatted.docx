@@ -1,0 +1,301 @@
+**Sprint Room Reporting**
+
+Monthly Process Reference
+
+*Team handover **&** reference document*
+
+This document walks through the full monthly Sprint Room reporting workflow for Ford carlines (Capri, Explorer, Kuga, Puma). It is structured as six sequential phases. Each phase opens with a banner summarising the goal, then breaks down into numbered steps with screenshots and callouts where useful.
+
+**Tip: **skim the *Process **at a glance* table on the next page before each new reporting cycle. The full detail follows after.
+
+## Process at a glance
+
+*Six phases from start to delivery. Phases 1 and 2 can be done in parallel; phases 3–6 are sequential.*
+
+| **Phase** | **What you do** | **Where** | **Output** |
+| --- | --- | --- | --- |
+| **1** | Clean Brandwatch queries — check peaks & exclude noise | Brandwatch (Capri, Explorer, Kuga, Puma) | Cleaner queries before reporting starts |
+| **2** | Set up the new month’s slide deck | PowerPoint (from Trello card) | Title slide updated, slide 2 ready for new insight |
+| **3** | Clean dashboard sentiment & update charts | Brandwatch dashboard → PPT | Volume, source, sentiment charts refreshed |
+| **4** | Export raw data & update semiprocess sheet | Brandwatch → Google Sheets | Pivot tables ready for both months |
+| **5** | Write insights from charts & pivot tables | PPT slide + slide notes | Bulletted insight on the new month’s slide |
+| **6** | Final QA & deliver | PPT, Google Sheets, Trello, email | Sent to Val (CC: Mike, Seb, Mia) |
+
+| **BEFORE YOU BEGIN** You will need access to: **Brandwatch** (Sprint Room dashboards), **Trello** (current month card), the **semiprocess**** Google Sheets** for each carline, and the **PowerPoint deck** from the previous month. Spare **Monday AMs** and **Friday PMs** before month-end are good slots for getting ahead on Phase 1, even if the full reporting month isn’t available yet. |
+| --- |
+
+| **PHASE ****1  ·****  ****Brandwatch**** — clean the queries** *Inspect each carline’s search query for the reporting month, identify irrelevant content, and add it to the **boolean** exclusions.* |
+| --- |
+
+Run this for **all four carlines** (Capri, Explorer, Kuga, Puma) before reporting work begins.
+
+### Step-by-step
+
+- Open the query for the carline in Brandwatch and set the date range to the reporting month.
+
+- Click into **each visible peak** in the Mention Volume chart and inspect the items — ideally check every date, not just peaks.
+
+- Note any **key phrases** from titles or text snippets of irrelevant items (in the original language).
+
+- Once you’ve been through the whole month, add those phrases to the boolean exclusions. Wait for Brandwatch to update, then repeat to catch anything missed.
+
+*Figure 1.1 — **Brandwatch** Explorer query. The peak around 11 March is the kind of spike to click into and verify.*
+
+| **DON’T UPDATE THE BOOLEAN PER-PEAK** Wait until you have checked **all** identified peaks (or all dates) before updating exclusions. Updating mid-pass means waiting for Brandwatch to refresh between each change — batch them. |
+| --- |
+
+| **PHASE ****2  ·****  ****Set up the new month’s deck** *Pull last month’s deck from Trello and prep slides 1–3 for the new reporting period.* |
+| --- |
+
+### Step-by-step
+
+- Download last month’s deck from the **Trello card** (e.g. [February 2026](https://trello.com/c/BASqRuzL/88-february-sprints)).
+
+- Edit the **title slide** to show the new reporting month and today’s date.
+
+- Duplicate the first non-title slide — this becomes your new **slide 2**.
+
+- On the new slide 2: update the subtitle to the new reporting period, delete the slide notes, and **mark out the old insights** (move them down a line and highlight in yellow as a reference for writing the new insight).
+
+- On slide 3 (the former slide 2): mark this as the **previous month’s slide** — it stays in for client reference and the marking prevents confusion.
+
+- Delete the old slide 4.
+
+*Figure 2.1 — Slide 2 with the previous month’s insight bullets moved down and highlighted yellow, ready as reference for the new write-up.*
+
+| **PHASE ****3  ·****  ****Clean the dashboard ****&**** update charts** *Fix sentiment tagging in the Mention List, then update the volume, source, and sentiment charts in the deck.* |
+| --- |
+
+Search **‘Ford Sprint Room’** in Brandwatch and open the relevant dashboard. Ignore Focus, Mustang Mach-E, and Puma Gen-E.
+
+Each month is run in two passes: **Explorer + Capri** first, then **Puma + Kuga**.
+
+### 3.1  Clean sentiment in the Mention List
+
+*Online News is the biggest source of inaccurate sentiment data. Cleaning it up now saves you from rework at the end of the cycle.*
+
+- Scroll to the bottom of the dashboard to find the **Mention List widget**.
+
+*Figure 3.1 — The Mention List widget at the bottom of the dashboard.*
+
+- Set filters: **Ford model** (the carline you’re reporting on), **Online News** as content source, and **positive + negative** sentiment.
+
+*Figure 3.2 — Filter panel set to Ford model + Online News + positive/negative sentiment only.*
+
+- Screen each result for relevance to the carline and accuracy of its sentiment tag. **Tip:** export the widget as Excel and work in Google Sheets so you can use **=****GOOGLETRANSLATE(****)** on foreign-language items.
+
+- For any item that doesn’t specifically focus on the filtered carline, change it to **neutral**. This includes passing mentions, articles covering several carlines equally, and articles focused on a different carline of the same brand.
+
+*Figure 3.3 — Re-tagging an item as neutral via the sentiment dropdown on the mention.*
+
+- If an item is tagged positive but is clearly negative (or vice versa), correct it the same way.
+
+- Delete blatantly irrelevant items.
+
+*Figure 3.4 — Deleting an irrelevant item from the Mention List.*
+
+| **ALL PASSING MENTIONS = NEUTRAL** Val is hawkish on this. Any sentiment changes you make here **must** be reflected both in your charts *and* in Brandwatch (use the item filter widget at the bottom of each dashboard). Pre-empt this and you save yourself a round trip. |
+| --- |
+
+### 3.2  Update each chart in Brandwatch
+
+Once the data is clean, set the date scope on each chart and save the dashboard before exporting.
+
+- **Volume over time chart: **reporting month + previous 3 months.
+
+- **Source of mentions chart: **reporting month only.
+
+- **Sentiment of mentions chart: **reporting month only.
+
+| **SAVE THE DASHBOARD** **Once chart scopes are set, save the dashboard before you start exporting. Easy to miss — painful to redo.** |
+| --- |
+
+Now export each chart as Excel and update the corresponding charts in your reporting-month slide. The detail per chart is below.
+
+### 3.3  Volume over time chart
+
+- Open the chart’s linked data in PowerPoint.
+
+- Copy the existing charted data into the reference table on the right.
+
+- Move the newer three months’ data to the left, leaving space on the right for the new month.
+
+| **DON’T OVERWRITE THE AVERAGE ROW** The Average row contains formulae. Leave it alone when shifting data left. |
+| --- |
+
+*Figure 3.5 — Volume over time chart data table in PPT, with the reference table on the right.*
+
+### 3.4  Source of mentions pie charts
+
+These can be copied straight from Brandwatch — you don’t even need to export. Hover over each segment to read the raw figure, or use the ‘Breakdown by’ dropdown to switch chart type.
+
+*Figure 3.6 — The ‘Breakdown by’ dropdown lets you switch chart types directly in **Brandwatch**.*
+
+### 3.5  Sentiment of mentions chart
+
+This is the fiddliest of the three. The left-hand tables are editable; the right-hand tables are formulated — don’t touch them.
+
+- Each block on the left needs to move down one position — *except* the bottom (third) block, which is being replaced.
+
+- Copy & paste-as-values: red section → bottom table; green section → red section.
+
+- Export the Brandwatch sentiment chart for the reporting period and paste into the now-empty top block.
+
+- Update the month label in the top-left of the new table.
+
+*Figure 3.7 — Sentiment chart data tables. Red → bottom, green → red, then paste fresh export into the top.*
+
+| **CHECK MODEL ORDER BEFORE YOU PASTE** Brandwatch exports do **not** always list models in the same order as the chart’s table. Verify each row matches its model label before pasting values. |
+| --- |
+
+| **PHASE ****4  ·****  ****Export raw data ****&**** update the ****semiprocess**** sheet** *Pull each competitor’s data download from **Brandwatch** into the Google Sheets **semiprocess** document and refresh the pivot tables.* |
+| --- |
+
+### 4.1  Export from Brandwatch
+
+- Scroll to the top of the dashboard and find the volume-per-month line chart.
+
+- Click each competitor’s datapoint for the reporting month (**including Ford**).
+
+- In the pop-up: **Export** → **Data Download** → **Next Step** → **Start Download**. No settings need changing.
+
+- Repeat for every competitor.
+
+- A green bar appears at the top — click **Excel** (***not*** CSV) for each download until the bar disappears.
+
+*Figure 4.1 — Clicking a competitor datapoint (e.g. **Enyaq** Coupe) opens the export pop-up. Use Data Download → Excel.*
+
+### 4.2  Paste into the semiprocess
+
+- Open the relevant carline’s **semiprocess**** Google Sheet** and go to the **Raw Data – Updated** tab.
+
+- Paste each export into the bottom-most free space of the **Query Id** column (column D).
+
+- Sheets can be slow — hold **Ctrl+V** for ~10 seconds to avoid clipboard misreads.
+
+### 4.3  Extend the helper formulas
+
+Columns A and B are formulated for use in the pivot tables:
+
+- Column A: =MONTH(F[row])
+
+- Column B: =GOOGLETRANSLATE(G[row])
+
+- Scroll to the bottom of your new data.
+
+- Select all the empty red cells in columns A and B, going up to **include the two filled cells** from the previous month’s last row.
+
+- Press **Ctrl+D** to fill the formulas down. Sheets may lag for a few minutes.
+
+*Figure 4.2 — Selecting from the bottom of new data up through the last filled formula cell, ready for **Ctrl+D**.*
+
+### 4.4  Archive the oldest month
+
+The semiprocess holds two months at a time. After adding the new one, push the oldest to archive.
+
+- Filter the data to show only the oldest input month (e.g. for the March 2026 Puma file, that’s month = 1, January).
+
+- Select all of the oldest month’s data and copy.
+
+- Open **Raw Data – Archive** from the All Sheets menu (bottom-left), scroll to the bottom, and paste.
+
+- Return to **Raw Data – Updated** and **delete the rows** for the archived month — don’t just clear contents, delete the rows themselves so no blanks are left.
+
+| **DELETE ROWS, DON’T CLEAR THEM** Blank rows get caught by the data filter and break the pivots. Always use **Delete row**, never *Delete* on cell contents. |
+| --- |
+
+### 4.5  Update the pivot tables
+
+- Go into each **process file** tab.
+
+- Update each of the 5 pivot tables per tab so their range covers **both** months.
+
+- You may need to insert extra rows so the pivots have room to display the new data.
+
+| **PHASE ****5  ·****  ****Write the insights** *Use the charts and pivot tables to write the new month’s narrative — in-slide bullets plus slide notes for overflow.* |
+| --- |
+
+Insights are split between the **in-slide text box** and the **slide notes**. Use the notes for overflow: extra mentions drivers, country breakdowns, etc.
+
+| **COUNTRY BREAKDOWNS IN THE NOTES** Val is especially interested in country breakdowns of platform mentions. These are usually too bulky for the main slide, so keep them in the notes. **Heuristic:** break a story down by country if it has more than ~30 mentions in any single country. |
+| --- |
+
+### Bullet structure
+
+- **Bullet 1: **Overall volume trend for each competitor — quantify mentions, starting with Ford. Use brand + model name in the first bullet, then just the model name thereafter.
+
+- **Bullet 2: **Key mentions drivers for Ford — give the top driver by platform (often news or forums). Then add the same for the competitor with the largest volume growth. See the relevant Process File tab.
+
+- **Bullet 3: **Ford carline sentiment — only if there’s anything specific to mention, including ‘clusters’ (drivers with volume <30).
+
+| **WHEN THERE ARE NO CLUSTERS** If volume for any given driver is too small (<30), use Val’s exact phrasing: ***“no clusters of issues were identified as drivers”***. |
+| --- |
+
+### Competitor changes
+
+Also write insights for any **competitor lines with major changes** (positive or negative) since the previous month — but **only** the major ones. If there isn’t room in the main slide, put them in the notes.
+
+### A note on sentiment
+
+All passing mentions **must** be neutral. If you change a sentiment tag, that change must show up in **both** the chart *and* Brandwatch (item filter widget at the bottom of each dashboard). Val will catch this if you don’t.
+
+| **PHASE ****6  ·****  ****Finalise ****&**** deliver** *QA the deck against **Brandwatch** and the **semiprocess**, tidy the sheet, then upload and email.* |
+| --- |
+
+### QA checklist
+
+- Data is consistent across charts, Brandwatch, and the semiprocess (Val will check this).
+
+- New insight slide subtitle shows the correct month.
+
+- PPT title slide shows the correct month and **current reporting date**.
+
+### Tidy the semiprocess
+
+- Refilter the current data tab to show **both months**.
+
+- Deselect any filters on carline, content source, sentiment, etc.
+
+- Delete any extra columns made during analysis (e.g. theme notes).
+
+- Re-hide column C (translated full text) for neatness.
+
+- Click **Share** → set to **anyone with the link can edit**.
+
+### Deliver
+
+- Save the PPT and upload it to the new **Trello card**.
+
+- Copy the semiprocess URL into the Trello card details.
+
+- Email to **Val**, CC **Mike, Seb, and Mia**.
+
+*Figure 6.1 — Trello card / share view: confirm the deck is uploaded and the **semiprocess** link is in the card details.*
+
+# Glossary & key terms
+
+*Internal jargon used throughout this document.*
+
+| **Sprint Room** | The Brandwatch dashboard set used for Ford monthly reporting. Search ‘Ford Sprint Room’ to find the relevant dashboards. |
+| --- | --- |
+
+| **Carline** | A specific Ford model line. The four in scope are Capri, Explorer, Kuga, and Puma. (Focus, Mustang Mach-E, and Puma Gen-E are out of scope.) |
+| --- | --- |
+
+| **Boolean exclusions** | Phrase-level exclusions added to a Brandwatch query to filter out irrelevant content surfaced in peak-checking. |
+| --- | --- |
+
+| **Mention List widget** | The widget at the bottom of each Brandwatch dashboard listing individual mentions. Used for sentiment cleanup. |
+| --- | --- |
+
+| **Semiprocess** | The per-carline Google Sheets workbook that holds raw data, helper formulas, and pivot tables. Two tabs of note: Raw Data – Updated and Raw Data – Archive. |
+| --- | --- |
+
+| **Process File tab** | A tab inside the semiprocess containing the 5 pivot tables that summarise mentions drivers by platform and carline. |
+| --- | --- |
+
+| **Cluster** | A mentions driver with a volume below ~30. Reported with the standard phrase “no clusters of issues were identified as drivers” when none qualify. |
+| --- | --- |
+
+| **Passing mention** | A mention where the carline is referenced but isn’t the focus of the article (e.g. mentioned alongside several other models). All passing mentions must be tagged neutral. |
+| --- | --- |

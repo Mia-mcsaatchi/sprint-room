@@ -1,0 +1,22 @@
+# --- Large / sensitive raw Brandwatch exports: never commit ---
+# They are large (often 80MB+) and contain scraped third-party content.
+# Small curated fixtures under samples/ ARE committed on purpose.
+# (Inline comments are NOT allowed in .gitignore; keep patterns clean.)
+
+# BW raw exports start with a numeric resource/query ID, e.g. 2057989146_SkodaEnyaq.xlsx
+[0-9]*.xlsx
+**/raw/**
+**/*Bulk*Mentions*.xlsx
+**/*BulkMentions*.xlsx
+
+# --- Build / QA artifacts ---
+skeleton/
+output.pptx
+slide-*.jpg
+*.pdf.tmp
+*.pyc
+__pycache__/
+.DS_Store
+
+# --- Per-cycle deliverables (kept out of the knowledge repo) ---
+*_Sprint_Room.pptx
