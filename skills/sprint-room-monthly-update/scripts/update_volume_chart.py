@@ -38,7 +38,7 @@ def read_volume_export(path):
         cells = rows[rn]
         if len(cells) < 5: continue
         model = cells[0][1]
-        vals = [int(float(c[1])) for c in cells[1:5]]
+        vals = [int(round(float(c[1]))) for c in cells[1:5]]
         data[model] = vals
     return month_labels, data
 
@@ -93,14 +93,17 @@ def main():
     # 2. Replace each series's values — match by series name + old vals sequence
     # Find each <c:ser> block, identify its model name, swap in new values
     def replace_series_vals(block, new_vals):
-        # Replace the c:val numCache values one by one in order
-        old_vals = re.findall(r'<c:val>.*?</c:val>', block, re.DOTALL)
-        if not old_vals: return block
-        val_block = old_vals[0]
-        old_nums = re.findall(r'<c:v>([^<]+)</c:v>', val_block)
-        new_val_block = val_block
-        for o, n in zip(old_nums, new_vals):
-            new_val_block = new_val_block.replace(f'<c:v>{o}</c:v>', f'<c:v>{n}</c:v>', 1)
+        # Replace the c:val numCache values POSITIONALLY (the i-th <c:v> gets new_vals[i]).
+        # String-substitution-by-old-value silently corrupts when a new value equals another
+        # month's old value (e.g. April=1005 reused as May) — see docs/slide-configs.md.
+        m = re.search(r'<c:val>.*?</c:val>', block, re.DOTALL)
+        if not m: return block
+        val_block = m.group(0)
+        ctr = {'i': 0}
+        def sub(mm):
+            i = ctr['i']; ctr['i'] += 1
+            return f'<c:v>{new_vals[i]}</c:v>' if i < len(new_vals) else mm.group(0)
+        new_val_block = re.sub(r'<c:v>[^<]*</c:v>', sub, val_block)
         return block.replace(val_block, new_val_block, 1)
 
     # Map chart series name (e.g. "Enyaq", "ID.4") to export name (e.g. "Skoda Enyaq", "VW id4")
@@ -136,8 +139,12 @@ def main():
         if not export_name:
             # Probably the carline or Average
             if chart_name == 'Average':
-                # compute from competitors
-                avgs = [sum(v[i] for v in comp_data.values())/len(comp_data) for i in range(4)]
+                # prefer the export's own Average row; else mean over real models (exclude any 'Average')
+                if 'Average' in comp_data:
+                    avgs = comp_data['Average']
+                else:
+                    models = [v for k, v in comp_data.items() if k.lower() != 'average']
+                    avgs = [sum(v[i] for v in models)/len(models) for i in range(4)]
                 new_block = replace_series_vals(block, [f'{a:.10g}' for a in avgs])
             else:
                 # carline — match by name fragment

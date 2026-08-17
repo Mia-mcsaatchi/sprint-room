@@ -10,6 +10,11 @@ including the manual Brandwatch/Sheets steps that stay human.
 > Point at the live skill instead of the repo copy with
 > `export SKILL_DIR=/mnt/skills/user/sprint-room-monthly-update`.
 
+> **Raw-only path:** if you only have the raw export + last month's deck (no four chart
+> exports), use `clean → derive → rawmenu → skeletonraw → chartsraw → bullets → pack` — it
+> cleans the feed (sign-off gate) and reconstructs the chart tables from raw. See
+> [`../docs/raw-only-path.md`](../docs/raw-only-path.md).
+
 ## 0. Before the automated part (manual, in Brandwatch / Sheets)
 
 These are analyst judgement and are **not** automated (see

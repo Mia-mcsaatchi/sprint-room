@@ -45,10 +45,56 @@ def read_sentiment_export(path):
                     data[q][sent_key] = 0
     return data
 
-def read_prior_chart3(pptx_path):
-    """Read the prior month's chart3 (sentiment) data — positive and negative series values."""
+def _find_prior_sentiment_chart(z):
+    """Locate the reported-month slide's sentiment chart in a prior deck, BY ROLE.
+
+    The prior deck's chart numbering varies per carline/cycle (Capri=chart4, Puma=chart16,
+    Explorer=chart3), so never hardcode a number. Pick the newest month-labelled, chart-bearing
+    slide, then the chart whose series are positive/neutral/negative (a bar+scatter combo).
+    """
+    import re as _re
+    months = {m.lower(): i for i, m in enumerate(
+        ["","January","February","March","April","May","June","July","August",
+         "September","October","November","December"]) if m}
+    best = None
+    for n in z.namelist():
+        m = _re.match(r'ppt/slides/(slide\d+)\.xml$', n)
+        if not m:
+            continue
+        rels_name = f'ppt/slides/_rels/{m.group(1)}.xml.rels'
+        if rels_name not in z.namelist():
+            continue
+        charts = _re.findall(r'Target="\.\./charts/(chart\d+\.xml)"', z.read(rels_name).decode())
+        if not charts:
+            continue
+        txt = z.read(n).decode('utf-8', 'replace')
+        mm = _re.search(r'\(EU\d\s+([A-Za-z]+)\s+(\d{2,4})\)', txt) or _re.search(r'([A-Za-z]+)\s+(\d{2,4})', txt)
+        if not mm:
+            continue
+        mo = months.get(mm.group(1).lower())
+        if not mo:
+            continue
+        yr = int(mm.group(2)); yr = yr + 2000 if yr < 100 else yr
+        key = (yr, mo)
+        if best is None or key > best[0]:
+            best = (key, charts)
+    if not best:
+        return None
+    for c in best[1]:
+        xml = z.read(f'ppt/charts/{c}').decode()
+        sn = [s.lower() for s in re.findall(r'<c:tx>.*?<c:v>([^<]*)</c:v>', xml, re.DOTALL)]
+        if 'scatterChart' in xml or any(s in ('positive', 'negative', 'neutral') for s in sn):
+            return f'ppt/charts/{c}'
+    return None
+
+def read_prior_chart3(pptx_path, prior_chart=None):
+    """Read the prior month's sentiment chart — positive and negative series values.
+
+    Chart is located by role (see _find_prior_sentiment_chart); pass prior_chart to override.
+    """
     with zipfile.ZipFile(pptx_path) as z:
-        xml = z.read('ppt/charts/chart3.xml').decode()
+        target = prior_chart or _find_prior_sentiment_chart(z) or 'ppt/charts/chart3.xml'
+        xml = z.read(target).decode()
     result = {}
     for ser_match in re.finditer(r'<c:ser>(.*?)</c:ser>', xml, re.DOTALL):
         block = ser_match.group(1)
@@ -67,11 +113,15 @@ def main():
     ap.add_argument('chart_xml')
     ap.add_argument('--new-month-sent', required=True)
     ap.add_argument('--prior-from-last-month', required=True)
+    ap.add_argument('--prior-chart', default=None,
+                    help="explicit ppt/charts/chartN.xml inside the prior deck (else auto-detect by role)")
+    ap.add_argument('--prior-month-name', default=None,
+                    help="prior month name for month-labelled diamond series, e.g. June (else leave name)")
     args = ap.parse_args()
 
     new_sent = read_sentiment_export(args.new_month_sent)
     print(f"New sentiment: {new_sent}")
-    prior_chart3 = read_prior_chart3(args.prior_from_last_month)
+    prior_chart3 = read_prior_chart3(args.prior_from_last_month, args.prior_chart)
     print(f"Prior chart3 positive: {prior_chart3.get('positive')}")
     print(f"Prior chart3 negative: {prior_chart3.get('negative')}")
 
@@ -152,9 +202,43 @@ def main():
     xml, n1 = replace_series(xml, 'positive', new_vals_pos, 'val')
     xml, n2 = replace_series(xml, 'neutral', new_vals_neu, 'val')
     xml, n3 = replace_series(xml, 'negative', new_vals_neg, 'val')
-    xml, n4 = replace_series(xml, 'positive pre', new_pos_pre, 'xVal')
-    xml, n5 = replace_series(xml, 'Negative Pre', new_neg_pre, 'xVal')
-    print(f"\nReplaced: pos {n1}, neu {n2}, neg {n3}, pos pre {n4}, neg pre {n5}")
+
+    # Diamonds = the scatter series carrying <c:xVal>. Their names vary per deck:
+    # 'positive pre'/'Negative Pre' (Explorer/Capri) or month-labelled 'Positive May' (Puma).
+    # Classify by polarity word in the name; update the xVals; and if the name ends in a month,
+    # rename it to the new prior month.
+    _MN = ['january','february','march','april','may','june','july','august',
+           'september','october','november','december']
+    def update_diamonds(content, prior_name):
+        counts = {'pos': 0, 'neg': 0}
+        def repl(mo):
+            block = mo.group(0)
+            if '<c:xVal>' not in block:
+                return block
+            nm = re.search(r'<c:tx>.*?<c:v>([^<]*)</c:v>', block, re.DOTALL)
+            name = nm.group(1) if nm else ''
+            low = name.lower()
+            if 'positive' in low:
+                new_list, key = new_pos_pre, 'pos'
+            elif 'negative' in low:
+                new_list, key = new_neg_pre, 'neg'
+            else:
+                return block
+            xv = re.search(r'<c:xVal>(.*?)</c:xVal>', block, re.DOTALL)
+            if xv:
+                vb = xv.group(0); olds = re.findall(r'<c:v>([^<]+)</c:v>', vb); nvb = vb
+                for o, new_v in zip(olds, new_list):
+                    nvb = nvb.replace(f'<c:v>{o}</c:v>', f'<c:v>{new_v:.17g}</c:v>', 1)
+                block = block.replace(vb, nvb, 1); counts[key] += 1
+            if prior_name:
+                m2 = re.match(r'(Positive|Negative|positive|negative)\s+(\w+)$', name)
+                if m2 and m2.group(2).lower() in _MN:
+                    block = block.replace(f'<c:v>{name}</c:v>', f'<c:v>{m2.group(1)} {prior_name}</c:v>')
+            return block
+        content = re.sub(r'<c:ser>.*?</c:ser>', repl, content, flags=re.DOTALL)
+        return content, counts['pos'], counts['neg']
+    xml, n4, n5 = update_diamonds(xml, args.prior_month_name)
+    print(f"\nReplaced: pos {n1}, neu {n2}, neg {n3}, pos-diamond {n4}, neg-diamond {n5}")
 
     # Strip manual data-label text overrides (they go stale)
     # Find <c:dLbl> containing <a:t>X%</a:t> and remove just the <c:tx>...</c:tx> sub-block

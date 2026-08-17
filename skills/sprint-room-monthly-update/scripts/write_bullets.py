@@ -136,8 +136,10 @@ def main():
     # Simpler: find the existing three bullet <a:p>...</a:p> sequence and replace it.
     # The summary text-frame is anchored by id="53" or similar; we look for the txBody
     # containing the volume bullet.
+    # Locate the summary/bullet text frame: the txBody that talks about "volume"
+    # (the volume bullet). Robust to wording differences ("Mention volume" vs "Mentions volume").
     txbody_m = re.search(
-        r'(<p:txBody>(?:(?!</p:txBody>).)*?Mentions volume(?:(?!</p:txBody>).)*?</p:txBody>)',
+        r'(<p:txBody>(?:(?!</p:txBody>).)*?[Vv]olume(?:(?!</p:txBody>).)*?</p:txBody>)',
         slide_xml, re.DOTALL)
     if not txbody_m:
         print("ERROR: could not locate summary txBody"); return
