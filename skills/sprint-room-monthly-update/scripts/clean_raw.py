@@ -40,17 +40,25 @@ FALSE_BY_CARLINE = {
         "tracksuit","cleats","running shoe","cougar","mountain lion","wildcat","big cat",
         "helicopter","eurocopter","mtu powerpack","puma helicopter",
     ],
+    "Explorer": [
+        "internet explorer","file explorer","windows explorer","explorer.exe","microsoft edge",
+        "dora the explorer","dora","boy scout","scout troop","polar explorer","space explorer",
+        "ocean explorer","national geographic","natgeo","explorer academy","ie11",
+    ],
 }
 # subset that is non-automotive regardless of brand
 OFFTOPIC_BY_CARLINE = {
     "Ford Capri": ["baleine","whale","cuba","logistics platform","fashionunited",
                    "aviaz","fco-otp","radici del","gutteridge","umbrellas banned"],
     "Ford Puma": ["helicopter","eurocopter","mtu powerpack","cougar","mountain lion","big cat"],
+    "Explorer": ["internet explorer","file explorer","windows explorer","explorer.exe",
+                 "dora the explorer","national geographic","natgeo","polar explorer","space explorer"],
 }
 # genuine-content overrides (never drop on a stray keyword)
 GENUINE_BY_CARLINE = {
     "Ford Capri": ["ford adapta","capri 100% eléctric","capri 100% electric","nuevo capri","ford capri rwd"],
     "Ford Puma": ["ford puma","puma st","puma gen-e"],
+    "Explorer": ["ford explorer","explorer ev","explorer bev"],
 }
 # analyst-approved specific calls, per carline (stable across re-exports)
 FORCE_KEEP_BY_CARLINE  = {"Ford Capri": ["nani roma","más de 13.000","mas de 13.000","ford explorer y capri"]}
@@ -69,6 +77,11 @@ MODEL_KW = {
     "Toyota Yaris Cross": ["yaris cross","yaris"],
     "Hyundai Kona": ["kona"],
     "VW T-Cross": ["t-cross","t cross"],
+    "Explorer": ["explorer"],
+    "Skoda Enyaq": ["enyaq"],
+    "Megane E-Tech": ["megane","e-tech"],
+    "VW id4": ["id4","id.4","id 4"],
+    "Volvo XC40 Recharge/ EX40": ["xc40","ex40"],
 }
 # STRONG signal = disambiguating brand+model phrase; presence means it really IS the car
 STRONG_KW = {
@@ -84,8 +97,13 @@ STRONG_KW = {
     "Toyota Yaris Cross": ["toyota yaris"],
     "Hyundai Kona": ["hyundai kona"],
     "VW T-Cross": ["vw t-cross","volkswagen t-cross","t-cross"],
+    "Explorer": ["ford explorer"],
+    "Skoda Enyaq": ["skoda enyaq"],
+    "Megane E-Tech": ["megane"],
+    "VW id4": ["vw id.4","volkswagen id.4","id.4","id4"],
+    "Volvo XC40 Recharge/ EX40": ["volvo xc40","xc40"],
 }
-OTHER_FORD = ["explorer","ford focus","mustang","fiesta","kuga"]
+OTHER_FORD = ["ford focus","mustang","fiesta","kuga","ford capri"]
 
 def ym(d): return d[:7] if d and re.match(r"\d{4}-\d{2}", d) else None
 
