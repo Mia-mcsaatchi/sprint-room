@@ -331,12 +331,18 @@ def stage_skeletonraw(a):
     return run(cmd, a.dry_run)
 
 def _newslide_roles(unpacked, new_month_name):
-    """Return {role: chartpath} for the skeleton's NEW-month slide (by subtitle month)."""
+    """Return {role: chartpath} for the skeleton's NEW-month slide (by subtitle month word).
+
+    Matches the subtitle "(EU5 <Month> ...)" by month word only, since decks vary the year
+    format (2026 vs 26); the new month is unique across the deck's two month slides.
+    """
     import glob as _g
     up = str(unpacked)
+    mon = new_month_name.split()[0].lower()
     target = None
     for s in _g.glob(f"{up}/ppt/slides/slide*.xml"):
-        if new_month_name.lower() in Path(s).read_text(encoding="utf-8", errors="replace").lower():
+        txt = Path(s).read_text(encoding="utf-8", errors="replace").lower()
+        if re.search(rf"\(eu\d\s+{mon}\b", txt) or (re.search(rf"\bsocial media\b", txt) and re.search(rf"\b{mon}\b", txt)):
             rels = Path(f"{up}/ppt/slides/_rels/{Path(s).name}.rels")
             if rels.exists() and "charts/chart" in rels.read_text():
                 target = rels; break
@@ -384,10 +390,10 @@ def _new_slide_name(work, mm, yr):
     """Filename of the new-month slide in the skeleton (matches subtitle month + has charts)."""
     import glob as _g
     up = work / "skeleton" / "unpacked"
-    want = f"{MONTHS[mm]} {yr}".lower()
+    mon = MONTHS[mm].lower()
     for s in _g.glob(str(up / "ppt" / "slides" / "slide*.xml")):
         txt = Path(s).read_text(encoding="utf-8", errors="replace").lower()
-        if want in txt and "volume" in txt:
+        if (re.search(rf"\(eu\d\s+{mon}\b", txt) or (re.search(r"\bsocial media\b", txt) and re.search(rf"\b{mon}\b", txt))) and "volume" in txt:
             return Path(s).name
     return None
 

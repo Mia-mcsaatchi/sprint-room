@@ -33,10 +33,12 @@ def infer_role(xml):
 
 def slide_month(up, slide):
     txt=read(f"{up}/ppt/slides/{slide}")
-    m=re.search(r"\(EU\d\s+([A-Za-z]+)\s+(20\d\d)\)",txt) or re.search(r"([A-Za-z]+)\s+(20\d\d)",txt)
+    # year may be 4-digit ("2026") or 2-digit ("26")
+    m=re.search(r"\(EU\d\s+([A-Za-z]+)\s+(\d{2,4})\)",txt) or re.search(r"([A-Za-z]+)\s+(\d{2,4})",txt)
     if not m: return None
     mo=MIDX.get(m.group(1).lower())
-    return (int(m.group(2)),mo) if mo else None
+    y=int(m.group(2)); y=y+2000 if y<100 else y
+    return (y,mo) if mo else None
 
 def slide_charts(up, slide):
     rp=f"{up}/ppt/slides/_rels/{slide}.rels"
@@ -126,13 +128,19 @@ def main():
     add="".join(f'<Override PartName="{pn}" ContentType="{c}"/>' for pn,c in ct_adds)
     ct=ct.replace("</Types>",add+"</Types>"); write(f"{up}/[Content_Types].xml",ct)
 
-    # subtitle on new slide (segment-aware) + title slide
+    # subtitle on new slide (segment-aware) + title slide.
+    # Replace only the MONTH word, preserving the deck's year format (some decks use "26", others "2026").
+    mn=a.new_month.split()[0]
     s=read(f"{up}/ppt/slides/{new_slide}")
-    s=re.sub(r'(<a:t>[^<]*–\s*Social Media \(EU\d\s+)[^<)]+(\)</a:t>)',rf'\g<1>{a.new_month}\g<2>',s)
-    s=re.sub(r'(<a:t>)[^<–]+(\s*–\s*Social Media \(EU\d\s+[^<)]+\)</a:t>)',rf'\g<1>{a.carline}\g<2>',s)
+    s=re.sub(r'(–\s*Social Media \(EU\d\s+)[A-Za-z]+(\s+\d{2,4}\)</a:t>)',rf'\g<1>{mn}\g<2>',s)
+    s=re.sub(r'(<a:t>)[^<–]+?(\s*–\s*Social Media \(EU\d\s+[^<)]+\)</a:t>)',rf'\g<1>{a.carline}\g<2>',s)
     write(f"{up}/ppt/slides/{new_slide}",s)
     s1=read(f"{up}/ppt/slides/slide1.xml")
-    s1=re.sub(r'(<a:t>Social Media )[^<]+(</a:t>)',rf'\g<1>{a.new_month}\g<2>',s1)
+    # title may be "Social Media (June 2026)" or "Social Media June 2026"/"... 26"
+    if re.search(r'Social Media \(', s1):
+        s1=re.sub(r'(Social Media \()[A-Za-z]+(\s+\d{2,4}\))',rf'\g<1>{mn}\g<2>',s1)
+    else:
+        s1=re.sub(r'(<a:t>Social Media )[A-Za-z]+(\s+\d{2,4}</a:t>)',rf'\g<1>{mn}\g<2>',s1)
     s1=re.sub(r'<a:t>\d{2}\.\d{2}\.\d{4}</a:t>',f'<a:t>{a.report_date}</a:t>',s1,count=1)
     write(f"{up}/ppt/slides/slide1.xml",s1)
 

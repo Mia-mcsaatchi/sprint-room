@@ -68,13 +68,14 @@ def _find_prior_sentiment_chart(z):
         if not charts:
             continue
         txt = z.read(n).decode('utf-8', 'replace')
-        mm = _re.search(r'\(EU\d\s+([A-Za-z]+)\s+(20\d\d)\)', txt) or _re.search(r'([A-Za-z]+)\s+(20\d\d)', txt)
+        mm = _re.search(r'\(EU\d\s+([A-Za-z]+)\s+(\d{2,4})\)', txt) or _re.search(r'([A-Za-z]+)\s+(\d{2,4})', txt)
         if not mm:
             continue
         mo = months.get(mm.group(1).lower())
         if not mo:
             continue
-        key = (int(mm.group(2)), mo)
+        yr = int(mm.group(2)); yr = yr + 2000 if yr < 100 else yr
+        key = (yr, mo)
         if best is None or key > best[0]:
             best = (key, charts)
     if not best:

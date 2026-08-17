@@ -45,6 +45,10 @@ FALSE_BY_CARLINE = {
         "dora the explorer","dora","boy scout","scout troop","polar explorer","space explorer",
         "ocean explorer","national geographic","natgeo","explorer academy","ie11",
     ],
+    "Kuga": [
+        # "Kuga" is largely Ford-specific; guard only against the few known homonyms
+        "yuto kuga","kuga anime","kuga surname",
+    ],
 }
 # subset that is non-automotive regardless of brand
 OFFTOPIC_BY_CARLINE = {
@@ -59,6 +63,7 @@ GENUINE_BY_CARLINE = {
     "Ford Capri": ["ford adapta","capri 100% eléctric","capri 100% electric","nuevo capri","ford capri rwd"],
     "Ford Puma": ["ford puma","puma st","puma gen-e"],
     "Explorer": ["ford explorer","explorer ev","explorer bev"],
+    "Kuga": ["ford kuga"],
 }
 # analyst-approved specific calls, per carline (stable across re-exports)
 FORCE_KEEP_BY_CARLINE  = {"Ford Capri": ["nani roma","más de 13.000","mas de 13.000","ford explorer y capri"]}
@@ -82,6 +87,12 @@ MODEL_KW = {
     "Megane E-Tech": ["megane","e-tech"],
     "VW id4": ["id4","id.4","id 4"],
     "Volvo XC40 Recharge/ EX40": ["xc40","ex40"],
+    "Kuga": ["kuga"],
+    "Dacia Bigster": ["bigster"],
+    "Jaecoo 7": ["jaecoo"],
+    "Hyundai Tucson": ["tucson"],
+    "VW Tiguan": ["tiguan"],
+    "Peugeot 3008": ["3008"],
 }
 # STRONG signal = disambiguating brand+model phrase; presence means it really IS the car
 STRONG_KW = {
@@ -102,8 +113,14 @@ STRONG_KW = {
     "Megane E-Tech": ["megane"],
     "VW id4": ["vw id.4","volkswagen id.4","id.4","id4"],
     "Volvo XC40 Recharge/ EX40": ["volvo xc40","xc40"],
+    "Kuga": ["ford kuga"],
+    "Dacia Bigster": ["dacia bigster"],
+    "Jaecoo 7": ["jaecoo"],
+    "Hyundai Tucson": ["hyundai tucson"],
+    "VW Tiguan": ["vw tiguan","volkswagen tiguan","tiguan"],
+    "Peugeot 3008": ["peugeot 3008"],
 }
-OTHER_FORD = ["ford focus","mustang","fiesta","kuga","ford capri"]
+OTHER_FORD = ["ford focus","mustang","fiesta","ford capri"]
 
 def ym(d): return d[:7] if d and re.match(r"\d{4}-\d{2}", d) else None
 

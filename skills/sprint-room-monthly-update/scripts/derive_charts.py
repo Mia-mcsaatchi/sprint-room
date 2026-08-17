@@ -92,11 +92,12 @@ def reported_charts(pptx):
         if not m: continue
         if not slide_charts(m.group(1)): continue   # only chart-bearing slides (skip title)
         txt=z.read(n).decode("utf-8","replace")
-        mm=re.search(r"\(EU\d\s+([A-Za-z]+)\s+(20\d\d)\)", txt) or re.search(r"([A-Za-z]+)\s+(20\d\d)", txt)
+        mm=re.search(r"\(EU\d\s+([A-Za-z]+)\s+(\d{2,4})\)", txt) or re.search(r"([A-Za-z]+)\s+(\d{2,4})", txt)
         if not mm: continue
         mo=_MONTHS_IDX.get(mm.group(1).lower())
         if not mo: continue
-        key=(int(mm.group(2)),mo)
+        yr=int(mm.group(2)); yr=yr+2000 if yr<100 else yr
+        key=(yr,mo)
         if best is None or key>best[0]: best=(key,m.group(1))
     if not best: raise RuntimeError("no month-labelled chart slide found")
     slide=best[1]
