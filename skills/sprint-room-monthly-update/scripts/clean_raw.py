@@ -65,6 +65,15 @@ GENUINE_BY_CARLINE = {
     "Explorer": ["ford explorer","explorer ev","explorer bev"],
     "Kuga": ["ford kuga"],
 }
+# per-MODEL homonym/off-topic terms, applied to that model as a COMPETITOR too (not just when it
+# is the carline). Kept tight so genuine car content is never dropped; the strong brand+model
+# phrase (STRONG_KW) always overrides. Competitor queries are otherwise well-tuned upstream.
+MODEL_FALSE = {
+    "Hyundai Tucson": ["tucson arizona","tucson, az","university of arizona","tucson police",
+                       "tucson unified","city of tucson","tucson weather","crossword"],
+    "Hyundai Kona": ["kona coffee","kona brew","ironman","triathlon","kona ice","big island",
+                     "kona hawaii"],
+}
 # analyst-approved specific calls, per carline (stable across re-exports)
 FORCE_KEEP_BY_CARLINE  = {"Ford Capri": ["nani roma","más de 13.000","mas de 13.000","ford explorer y capri"]}
 FORCE_RETAG_BY_CARLINE = {"Ford Capri": ["i drove 6 brand new cars","modelljahr 2027","alle radici","fco-otp","mazda mx-5","mazda mx5"]}
@@ -161,6 +170,8 @@ def classify(r, carline_q="Ford Capri", retag_passing=False):
     if q == carline_q:
         false_hit    = next((k for k in false_kws if k in txt), None)
         offtopic_hit = next((k for k in offtopic_kws if k in txt), None)
+    elif q in MODEL_FALSE:                      # competitor homonym/off-topic guard
+        false_hit = next((k for k in MODEL_FALSE[q] if k in txt), None)
     # other tracked model (or other Ford) is the subject in the title, own model absent
     other = [m for m,kws in MODEL_KW.items() if m!=q and any(k in tl for k in kws)]
     other += [f for f in OTHER_FORD if f in tl]
