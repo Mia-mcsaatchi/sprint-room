@@ -75,10 +75,11 @@ def main():
     df["txt"] = (df["Title"] + " " + df["Full Text"]).str.replace(r"\s+", " ", regex=True)
     df["norm"] = df["Title"].map(norm_title)
 
-    noise_patterns = []
+    noise_patterns, require_context = [], None
     try:
         cfg = json.load(open(a.config))
         noise_patterns = cfg.get(a.carline, {}).get("noise_patterns", [])
+        require_context = cfg.get(a.carline, {}).get("require_context")
     except (OSError, json.JSONDecodeError):
         pass
 
@@ -197,19 +198,29 @@ def main():
         w("")
 
     # 8. noise
-    w(f"## 8. Noise scan — {a.carline} rows matching config `noise_patterns`\n")
-    if not noise_patterns:
-        w("_No `noise_patterns` configured for this carline in carlines.json — add the phrases you "
-          "exclude in Brandwatch so this section works next cycle._\n")
+    w(f"## 8. Noise scan — {a.carline} rows matching config `noise_patterns` / lacking `require_context`\n")
+    if not noise_patterns and not require_context:
+        w("_No `noise_patterns` or `require_context` configured for this carline in carlines.json — add the "
+          "phrases you exclude in Brandwatch so this section works next cycle._\n")
     else:
-        pat = re.compile("|".join(noise_patterns), re.I)
-        hits = df[(df["Query Name"] == cq) & df["txt"].str.contains(pat)]
+        carline_rows = df[df["Query Name"] == cq]
+        mask = carline_rows["txt"].str.contains(re.compile("|".join(noise_patterns), re.I)) if noise_patterns \
+            else carline_rows["txt"].map(lambda _: False)
+        pat = re.compile("|".join(noise_patterns), re.I) if noise_patterns else None
+        if require_context:
+            # generic-word carlines (Explorer): a row with none of the context words is almost always
+            # the common noun / another product, not the car
+            ctx = re.compile(require_context, re.I)
+            mask = mask | ~carline_rows["txt"].str.contains(ctx)
+            w(f"`require_context` = `{require_context}` — rows with none of these words are listed too.\n")
+        hits = carline_rows[mask]
         by = hits.groupby(["Month", "Page Type"]).size().to_dict()
         w(f"{len(hits)} rows matched ({by}). Candidate boolean exclusions — check each, don't drop blind.\n")
         for _, r in hits.sort_values(["Month", "Date"]).iterrows():
-            m = pat.search(r["txt"])
+            m = pat.search(r["txt"]) if pat else None
+            why = f"matched `{m.group(0)}`" if m else "no context word"
             w(f"- M{int(r['Month'])} {r['Date'].date()} · {r['Page Type']} · {r['Sentiment']} · {r['Domain']} · "
-              f"matched `{m.group(0) if m else ''}` · <{r['Url']}>  ")
+              f"{why} · <{r['Url']}>  ")
             w(f"  _{snip(r['txt'], 140)}_")
         clean_n = cn[~cn.index.isin(hits.index)]
         clean_p = cp[~cp.index.isin(hits.index)]

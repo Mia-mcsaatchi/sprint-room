@@ -6,7 +6,9 @@
     "chart_roles": {"volume": "chart9", "country": "chart10", "sentiment": "chart11", "platform": "chart12"},
     "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
     "verify_chart_roles": false,
-    "notes": "Original template; the skill's documented default order."
+    "require_context": "ford|capri|kuga|puma|mach-?e|mustang|explorer\\s*(bev|ev\\b|el[eé]ctric|électrique|elettric|elektr|electric|awd|style|extended|standard)|(electric|elektrische|elektrischen|eléctrico|électrique|elettrica)\\s+explorer|explorer/capri|capri/explorer|explorer ?& ?capri",
+    "noise_patterns": ["Gibson Explorer", "Explorer Gadget", "file explorer", "Internet Explorer", "Sea-Doo", "Antigravity A1 Explorer", "Lovens Explorer", "uranium explorer", "Graphite Explorer", "KingLandfr", "Aventura 47 Explorer", "Cosmic Explorer"],
+    "notes": "Original template; the skill's documented default order. 'Explorer' is a generic word: ~20% of raw rows (Aug-2026) were the French verb, mining stocks, a guitar, drones, boats, Pokémon Go. require_context lists the words a real Ford Explorer row carries; rows with none are surfaced by `run.py flags`. Watch the Spanish dealer-PR syndications (one 'Ford Nicolás' release = 59 rows on 30-31 Aug 2026)."
   },
   "Kuga": {
     "segment": "EU5",
