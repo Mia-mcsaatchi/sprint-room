@@ -1,7 +1,7 @@
 """Standard roll-forward used for Puma Aug-2026: last deck (title, July, June) -> title, August (new), July (carried forward).
 Reference implementation. Constants (series names, 5 sentiment categories, pie categories, diamond Y, sheet names) are the PUMA
 template (Explorer-style: chart1 volume, chart2 country, chart3 platform, chart4 sentiment) - read them from the last deck first.
-See tools/catchup/README.md.
+See tools/catchup/README.md."""
 import os, re, shutil, subprocess, sys, json, copy
 from pathlib import Path
 from lxml import etree

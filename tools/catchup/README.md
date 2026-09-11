@@ -64,3 +64,18 @@ which did not match the chart formulas — the builder regenerates them to match
 LibreOffice in the remote sandbox could not load any file ("source file could not be loaded"), so
 no PDF render was possible. QA was `validate.py --original`, `markitdown` text dump and an XML
 re-read of every chart cache, relationship and label position. Do the visual pass in PowerPoint.
+
+## Standard roll-forward variant (Puma Aug-2026)
+
+`build_rollforward_from_clean.py` + `content_pack_rollforward.py` are the one-new-slide version used
+when the previous month's deck exists: title → new month → previous month (carried forward untouched).
+Differences from the Capri catch-up: diamonds come from the last deck's published chart (the
+`Positive <Month>` / `Negative <Month>` scatter series are renamed to the new prior month); the volume
+line takes three months from the last chart cache and one from data; no manual line labels.
+
+Basis rule that mattered for Puma: the published July figure (949) was the raw Brandwatch count with
+rally coverage kept "per analyst direction". August was therefore computed with rally IN and only
+unambiguous non-car noise out, so the line and the diamonds stay like-for-like; the cleaning step vs
+July (~40 rows) is stated in the notes. Puma template: chart1 volume (Puma, Yaris Cross, 2008, Kona,
+T-Cross, Average = mean of 5), chart2 country pie (UK, ES, IT, FR, DE), chart3 platform pie (Online
+News, Forums, X, Blogs, Review), chart4 sentiment with 5 categories and diamond Y = 3, 9, 15, 21, 27.
