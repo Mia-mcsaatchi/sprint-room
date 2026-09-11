@@ -47,6 +47,20 @@ python3 run.py validate --carline Kuga --month 2026-07   # runs the skill valida
 (UTC/GMT quirk), missing competitors in the sentiment export, and a platform export that came
 out **unfiltered** (`all`/`all`) — re-export that one filtered to the carline if flagged.
 
+## 2b. Dataset flags sweep (needs only `raw.xlsx`)
+
+```bash
+python3 run.py flags --carline Kuga --month 2026-07
+```
+
+Writes `work/Kuga/2026-07/dataset_flags.md`: volume / platform / sentiment MoM per model, the
+carline's country split, story clusters for both months, the carline's daily peaks (what to click
+into in Brandwatch), **every carline positive/negative row with its text** (the Phase 3 retag
+list), a **noise scan** against `noise_patterns` in `config/carlines.json` (candidate boolean
+exclusions — reviewed, never auto-dropped), and the carline's news split into carline-titled vs
+passing mention. Read it before `menu`; anything you exclude or retag here has to happen in
+Brandwatch **before** you export the four chart files, because it changes all of them.
+
 ## 3. Bullet menu  ← HARD GATE
 
 ```bash
@@ -110,6 +124,7 @@ cd monthly-run
 python3 run.py newmonth   --carline C --month YYYY-MM
 python3 run.py doctor     --carline C --month YYYY-MM
 python3 run.py validate   --carline C --month YYYY-MM
+python3 run.py flags      --carline C --month YYYY-MM      # read dataset_flags.md; retag/exclude in BW
 python3 run.py menu       --carline C --month YYYY-MM      # approve menu.md
 python3 run.py skeleton   --carline C --month YYYY-MM --report-date DD.MM.YYYY
 python3 run.py fixskeleton --carline C --month YYYY-MM

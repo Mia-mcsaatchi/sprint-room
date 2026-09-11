@@ -11,18 +11,40 @@ Usage:
     python3 extract_drivers.py --carline Capri --raw raw.xlsx \\
         --new-month 4 --prior-month 3 --out menu.md
 """
-import argparse, subprocess, os, tempfile, re
+import argparse, subprocess, os, sys, tempfile, re
 from collections import defaultdict
 
+# tools/bw_read.py lives two levels up in the repo (../../../tools); also honour BW_TOOLS_DIR
+# for a skill installed outside the repo.
+_TOOLS = [os.environ.get('BW_TOOLS_DIR', ''),
+          os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'tools')]
+for _t in _TOOLS:
+    if _t and os.path.isdir(_t) and _t not in sys.path:
+        sys.path.insert(0, _t)
+
 def load_raw(xlsx_path):
-    import pandas as pd, io
-    with tempfile.TemporaryDirectory() as td:
-        subprocess.run(['libreoffice','--headless','--convert-to','csv','--outdir',td, xlsx_path],
-                       capture_output=True, text=True, timeout=180)
-        csv_path = os.path.join(td, [f for f in os.listdir(td) if f.endswith('.csv')][0])
-        df = pd.read_csv(csv_path, low_memory=False)
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df['Month'] = df['Date'].dt.month
+    """Load a raw Bulk Mentions export. Prefer tools/bw_read (inline-string aware, header
+    detected by 'Query Name'); fall back to LibreOffice CSV only if bw_read is unavailable."""
+    import pandas as pd
+    try:
+        from bw_read import load_dataframe
+    except ImportError:
+        load_dataframe = None
+    if load_dataframe is not None:
+        df = load_dataframe(xlsx_path)
+        if df.empty:
+            raise SystemExit(f"No data rows found in {xlsx_path} (header row 'Query Name' in col B?)")
+    else:
+        with tempfile.TemporaryDirectory() as td:
+            subprocess.run(['libreoffice','--headless','--convert-to','csv','--outdir',td, xlsx_path],
+                           capture_output=True, text=True, timeout=180)
+            csvs = [f for f in os.listdir(td) if f.endswith('.csv')]
+            if not csvs:
+                raise SystemExit("LibreOffice could not convert the export and tools/bw_read.py was not "
+                                 "importable. Set BW_TOOLS_DIR to the repo's tools/ directory.")
+            df = pd.read_csv(os.path.join(td, csvs[0]), low_memory=False)
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df['Month'] = df['Date'].dt.month
     df['Title'] = df['Title'].fillna('').astype(str)
     df['Full Text'] = df['Full Text'].fillna('').astype(str) if 'Full Text' in df.columns else ''
     return df
@@ -144,7 +166,7 @@ def main():
     out_lines.append("### bullet1 (volume)\n")
     out_lines.append("> Mentions volume {direction} for {scope} from {prior month}, with Ford " + args.carline + " {Δ}, alongside ...\n")
     out_lines.append("### bullet2 (drivers)\n")
-    out_lines.append(f"> {args.carline}'s {direction} was driven by news ({Δ}). Top driver: [STORY] ({count} mentions, {region}). Secondary driver: ...\n")
+    out_lines.append(f"> {args.carline}'s {{direction}} was driven by news ({{Δ}}). Top driver: [STORY] ({{count}} mentions, {{region}}). Secondary driver: ...\n")
     out_lines.append("### bullet3 (sentiment)\n")
     out_lines.append(f"> {args.carline} sentiment ...\n")
     out_lines.append("### hyperlinks\n")

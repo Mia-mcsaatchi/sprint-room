@@ -25,6 +25,19 @@ python3 tools/bw_read.py FILE.xlsx --querydist   # validate contents by Query Na
 python3 tools/bw_read.py FILE.xlsx --head 20
 ```
 
+For pandas work use `bw_read.load_dataframe(path)` — it returns a DataFrame keyed by header
+label with `Date` parsed and `Month` bucketed on the local-time month boundary (a 23:xx UTC
+mention on the last day of the month belongs to the next month, which is what Brandwatch's own
+`23:00:00` column label reflects). `extract_drivers.py`, `validate_inputs.py` and
+`tools/dataset_flags.py` all load through it.
+
+- **LibreOffice CSV conversion can fail outright**, not just unreliably: on the Capri Aug-2026
+  export `soffice --convert-to csv` returned "source file could not be loaded" and produced no
+  file. The skill scripts keep it only as a fallback when `bw_read` cannot be imported.
+- **Column letters move between exports.** The Capri Aug-2026 file had 177 columns (not 186);
+  `Full Text` was `AF`, `Reach (new)` `BX`, `Page Type Name` `DW`. Never address a column by
+  letter — look it up by header name.
+
 ## OOXML deck manipulation
 
 Unpack via `unzip`, manipulate the XML directly (lxml for charts, regex for slide text and

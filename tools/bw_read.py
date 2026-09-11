@@ -97,6 +97,34 @@ def query_name_distribution(path):
     return Counter((r.get("Query Name") or "").strip() for r in records(path))
 
 
+def load_dataframe(path, text_cols=("Title", "Full Text", "Url", "Domain", "Country",
+                                     "Page Type", "Page Type Name", "Sentiment", "Language",
+                                     "Author", "Query Name")):
+    """Raw export -> pandas DataFrame keyed by header label, with Date/Month parsed.
+
+    Use this instead of LibreOffice CSV conversion: on some exports (e.g. the Capri
+    Aug-2026 file) soffice fails outright with "source file could not be loaded", and even
+    when it works the 5-row metadata block lands above the real header. Columns are looked
+    up by NAME — letters move between exports (177 vs 186 columns seen in the wild).
+
+    Month bucketing: BW dates are UTC. A mention stamped 23:xx on the last day of the prior
+    month is a local-time (BST/CEST) first-of-month mention, so it is bucketed forward.
+    """
+    import pandas as pd
+    rows = [r for r in records(path) if any(v not in (None, "") for v in r.values())]
+    df = pd.DataFrame(rows)
+    if df.empty or "Date" not in df.columns:
+        return pd.DataFrame(columns=["Query Name", "Date", "Month", "Year"])
+    for c in text_cols:
+        if c in df.columns:
+            df[c] = df[c].fillna("").astype(str)
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    local = df["Date"] + pd.Timedelta(hours=1)  # UTC -> UK/EU local (approx; only the 23:00 edge matters)
+    df["Month"] = local.dt.month
+    df["Year"] = local.dt.year
+    return df
+
+
 def _main():
     ap = argparse.ArgumentParser(description="Read a Brandwatch xlsx export reliably.")
     ap.add_argument("file")

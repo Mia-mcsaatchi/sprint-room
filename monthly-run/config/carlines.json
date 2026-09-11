@@ -1,5 +1,5 @@
 {
-  "_comment": "Per-carline config for the monthly Sprint Room run. chart_roles maps a role to the chartN.xml the skeleton builder produces for the NEW month's slide (skill duplicates last month's charts into 9-12). Verify against the actual deck when verify_chart_roles is true. See ../../docs/slide-configs.md.",
+  "_comment": "Per-carline config for the monthly Sprint Room run. chart_roles maps a role to the chartN.xml the skeleton builder produces for the NEW month's slide (skill duplicates last month's charts into 9-12). Verify against the actual deck when verify_chart_roles is true. See ../../docs/slide-configs.md. noise_patterns: case-insensitive regex fragments that `run.py flags` uses to surface off-topic rows in the raw export (candidate boolean exclusions - reviewed, never auto-dropped).",
   "Explorer": {
     "segment": "EU7",
     "competitors": ["Skoda Enyaq", "VW ID.4", "Renault Megane E-Tech", "Peugeot E-3008", "Volvo XC40 Recharge/EX40"],
@@ -22,7 +22,14 @@
     "chart_roles": {"volume": "chart9", "platform": "chart10", "country": "chart11", "sentiment": "chart12"},
     "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
     "verify_chart_roles": false,
-    "notes": "EU7; 6 competitors. Watch the towing-PR NEAR/5 query asymmetry vs Explorer."
+    "noise_patterns": [
+      "GTA ?6", "GTA VI", "GTAWiki", "Naples, Florida",
+      "Manu Capri", "FapHouse",
+      "Yacht In Capri", "Casa Malaparte", "Capri City Guide", "LVCityGuide", "alcalde de Capri", "Anacapri", "Positano", "isle of Capri", "island of Capri", "NH Capri", "Capri living", "Capri Sun",
+      "Capri Jolliffe", "Capri AS ", "Omsetningen til Capri", "Capri Holdings", "Gutteridge", "BoyleSports",
+      "Ford Capri 2\\.8i", "Capri 3000", "Capri RS", "Capri anni", "Mk ?[123] Capri", "Capri Mk ?[123]", "locandine pubblicitarie", "Classic Ford Show", "period film"
+    ],
+    "notes": "EU7; 6 competitors. Watch the towing-PR NEAR/5 query asymmetry vs Explorer. Noise sources seen Aug-2026: GTA 6 'Capri' city RTs (10 in one day), a porn performer, Capri-island travel/fashion, Norwegian company 'Capri AS', and classic 1970s/80s Capri content. Heritage-vs-new-Capri backlash tweets are NOT noise - they are the X story."
   },
   "Puma": {
     "segment": "EU5",
