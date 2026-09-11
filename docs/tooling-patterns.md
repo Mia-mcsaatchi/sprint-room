@@ -52,6 +52,15 @@ rels), repack via `zip -Xr` from **inside** the unpacked directory, then validat
   common cause is an empty self-closing `<c:ext .../>` in a duplicated chart (add a child or
   remove the element).
 
+## The Capri deck is NOT the Explorer template
+
+Read chart roles and categories from the deck, never from the docs. In the Capri June-2026 deck:
+chart1 = volume (8 series incl. `Average` = mean of all 7 models), chart2 = **platform** pie,
+chart3 = **country** pie (2-letter codes), chart4 = sentiment with **7** categories and 7 diamonds;
+three manual text boxes label the Capri / Average / Enyaq Coupe line ends and must be moved when
+values change (their y-position mapping only holds if the value axis is pinned to 0–600). Full
+table in [`../tools/catchup/README.md`](../tools/catchup/README.md).
+
 ## Known `build_skeleton.py` bugs — manual fix EVERY cycle
 
 These recur; assume they are present until proven otherwise:

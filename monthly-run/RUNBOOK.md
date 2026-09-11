@@ -108,6 +108,14 @@ python3 run.py embed   --carline Kuga --month 2026-07     # patch chart mapping 
 python3 run.py pack    --carline Kuga --month 2026-07     # → work/.../Kuga_Social_Media_July_2026_Sprint_Room.pptx
 ```
 
+## 6b. Catch-up build — a month was skipped, or no chart exports
+
+If the previous month's slide was never delivered (Capri July 2026), the new deck needs two new
+slides and the prior-month diamonds cannot come from a published chart. Build both months from the
+last delivered deck plus the cleaned raw export with [`../tools/catchup/`](../tools/catchup/README.md)
+(chart inputs → content pack → `build_deck_from_clean.py`). Same retag tier on both months; state the
+methodology step in the notes.
+
 ## 7. QA & deliver (manual — Phase 6)
 
 Render to PDF, eyeball the four charts (ignore the documented LibreOffice-only quirks in
