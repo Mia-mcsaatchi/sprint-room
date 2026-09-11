@@ -13,7 +13,7 @@ Conventions
 Inputs  : monthly-run/inputs/<CARLINE>/<YYYY-MM>/
             last_month.pptx  raw.xlsx  chart_volume.xlsx  chart_country.xlsx
             chart_platform.xlsx  chart_sentiment.xlsx
-Work    : monthly-run/work/<CARLINE>/<YYYY-MM>/   (skeleton/, menu.md, output.pptx)
+Work    : monthly-run/work/<CARLINE>/<YYYY-MM>/   (skeleton/, dataset_flags.md, menu.md, output.pptx)
 
 Typical cycle
 -------------
@@ -21,6 +21,7 @@ Typical cycle
     # (drop the six exports into the inputs folder it printed)
     python run.py doctor    --carline Kuga --month 2026-07
     python run.py validate  --carline Kuga --month 2026-07
+    python run.py flags     --carline Kuga --month 2026-07   # dataset sweep (needs raw.xlsx only)
     python run.py menu      --carline Kuga --month 2026-07
     #   ---- HARD GATE: review & approve work/.../menu.md ----
     python run.py skeleton  --carline Kuga --month 2026-07
@@ -123,6 +124,24 @@ def stage_validate(a):
            "--country", inp / "chart_country.xlsx", "--platform", inp / "chart_platform.xlsx",
            "--sent", inp / "chart_sentiment.xlsx", "--last-month", inp / "last_month.pptx"]
     return run(cmd, a.dry_run)
+
+def stage_flags(a):
+    """Pre-build dataset sweep: MoM tables, clusters, peaks, the carline's pos/neg rows for
+    retag review, and a noise scan against config `noise_patterns`. Needs only raw.xlsx."""
+    inp, work = paths(a.carline, a.month)
+    work.mkdir(parents=True, exist_ok=True)
+    _, mm, prior = month_parts(a.month)
+    out = work / "dataset_flags.md"
+    if not a.dry_run:
+        need(inp / "raw.xlsx", "raw export (inputs/<C>/<M>/raw.xlsx)")
+    cmd = ["python3", REPO / "tools" / "dataset_flags.py", "--carline", a.carline,
+           "--raw", inp / "raw.xlsx", "--new-month", mm, "--prior-month", prior,
+           "--config", HERE / "config" / "carlines.json", "--out", out]
+    rc = run(cmd, a.dry_run)
+    if rc == 0 and not a.dry_run:
+        say(f"\nRead {out} before `menu`: retag list (§7), noise candidates (§8), "
+            f"passing vs real news (§9).", "y")
+    return rc
 
 def stage_menu(a):
     inp, work = paths(a.carline, a.month)
@@ -271,7 +290,7 @@ def stage_pack(a):
 
 STAGES = {
     "newmonth": stage_newmonth, "doctor": stage_doctor, "validate": stage_validate,
-    "menu": stage_menu, "skeleton": stage_skeleton, "fixskeleton": stage_fixskeleton,
+    "flags": stage_flags, "menu": stage_menu, "skeleton": stage_skeleton, "fixskeleton": stage_fixskeleton,
     "roles": stage_roles, "charts": stage_charts, "bullets": stage_bullets,
     "embed": stage_embed, "pack": stage_pack,
 }

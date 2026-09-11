@@ -1,12 +1,14 @@
 {
-  "_comment": "Per-carline config for the monthly Sprint Room run. chart_roles maps a role to the chartN.xml the skeleton builder produces for the NEW month's slide (skill duplicates last month's charts into 9-12). Verify against the actual deck when verify_chart_roles is true. See ../../docs/slide-configs.md.",
+  "_comment": "Per-carline config for the monthly Sprint Room run. chart_roles maps a role to the chartN.xml the skeleton builder produces for the NEW month's slide (skill duplicates last month's charts into 9-12). Verify against the actual deck when verify_chart_roles is true. See ../../docs/slide-configs.md. noise_patterns: case-insensitive regex fragments that `run.py flags` uses to surface off-topic rows in the raw export (candidate boolean exclusions - reviewed, never auto-dropped).",
   "Explorer": {
     "segment": "EU7",
     "competitors": ["Skoda Enyaq", "VW ID.4", "Renault Megane E-Tech", "Peugeot E-3008", "Volvo XC40 Recharge/EX40"],
     "chart_roles": {"volume": "chart9", "country": "chart10", "sentiment": "chart11", "platform": "chart12"},
     "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
     "verify_chart_roles": false,
-    "notes": "Original template; the skill's documented default order."
+    "require_context": "ford|capri|kuga|puma|mach-?e|mustang|explorer\\s*(bev|ev\\b|el[eé]ctric|électrique|elettric|elektr|electric|awd|style|extended|standard)|(electric|elektrische|elektrischen|eléctrico|électrique|elettrica)\\s+explorer|explorer/capri|capri/explorer|explorer ?& ?capri",
+    "noise_patterns": ["Gibson Explorer", "Explorer Gadget", "file explorer", "Internet Explorer", "Sea-Doo", "Antigravity A1 Explorer", "Lovens Explorer", "uranium explorer", "Graphite Explorer", "KingLandfr", "Aventura 47 Explorer", "Cosmic Explorer"],
+    "notes": "Original template; the skill's documented default order. 'Explorer' is a generic word: ~20% of raw rows (Aug-2026) were the French verb, mining stocks, a guitar, drones, boats, Pokémon Go. require_context lists the words a real Ford Explorer row carries; rows with none are surfaced by `run.py flags`. Watch the Spanish dealer-PR syndications (one 'Ford Nicolás' release = 59 rows on 30-31 Aug 2026)."
   },
   "Kuga": {
     "segment": "EU5",
@@ -14,7 +16,8 @@
     "chart_roles": {"volume": "chart9", "country": "chart10", "platform": "chart11", "sentiment": "chart12"},
     "sentiment_series_casing": {"positive_pre": "Positive Pre", "negative_pre": "Negative Pre"},
     "verify_chart_roles": false,
-    "notes": "EU5. build_skeleton hardcodes EU7 in the subtitle regex - fix subtitle manually. Sentiment series names are Capitalised ('Positive Pre'/'Negative Pre')."
+    "noise_patterns": ["Toya Kuga", "Digimon", "Arcanadea", "Hemmingstedt", "Dagbon", "4chan"],
+    "notes": "EU5. build_skeleton hardcodes EU7 in the subtitle regex - fix subtitle manually. Sentiment series names are Capitalised ('Positive Pre'/'Negative Pre'); the diamond series in a published deck hold the PRIOR month, so the new month's diamonds come from that deck's 'positive'/'negative' BARS, not its diamonds. The Kuga query is clean (Aug-2026: 9 homonym rows in two months - a Digimon card 'Toya Kuga', a 4chan/anime character, a football report, an obituary); the July-2026 deck reported the raw count whole and retagged passing pos/neg mentions to neutral - keep that basis. Watch Spanish dealer-PR syndications (Ford Nicolas: 59 rows on 30-31 Aug 2026) and the Ford-Geely Almussafes story (373 rows Jul, 82 Aug). chart_roles verified on the July-2026 deck: chart1 volume (series Tiguan, 3008, Tucson, Jaecoo 7, Kuga, Bigster, Average = mean of 6; sheet 'Kuga - 2'), chart2 country pie (UK, ES, DE, IT, FR), chart3 platform pie (Forums, Online News, X, Review, Blogs, Tumblr), chart4 sentiment with 6 categories (Hyundai Tucson, Jaecoo 7, Dacia Bigster, Peugeot 3008, VW Tiguan, Kuga; sheet 'Kuga'; diamond Y = 2.6, 7.6, 12.6, 17.6, 22.6, 27.6). Bullets live in 'TextBox 6', title in 'Title 3' as 'Kuga – Social Media (EU5 <Month> 26)'."
   },
   "Capri": {
     "segment": "EU7",
@@ -22,14 +25,23 @@
     "chart_roles": {"volume": "chart9", "platform": "chart10", "country": "chart11", "sentiment": "chart12"},
     "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
     "verify_chart_roles": false,
-    "notes": "EU7; 6 competitors. Watch the towing-PR NEAR/5 query asymmetry vs Explorer."
+    "noise_patterns": [
+      "GTA ?6", "GTA VI", "GTAWiki", "Naples, Florida",
+      "Manu Capri", "FapHouse",
+      "Yacht In Capri", "Casa Malaparte", "Capri City Guide", "LVCityGuide", "alcalde de Capri", "Anacapri", "Positano", "isle of Capri", "island of Capri", "NH Capri", "Capri living", "Capri Sun",
+      "Capri Jolliffe", "Capri AS ", "Omsetningen til Capri", "Capri Holdings", "Gutteridge", "BoyleSports",
+      "Ford Capri 2\\.8i", "Capri 3000", "Capri RS", "Capri anni", "Mk ?[123] Capri", "Capri Mk ?[123]", "locandine pubblicitarie", "Classic Ford Show", "period film"
+    ],
+    "notes": "EU7; 6 competitors. Watch the towing-PR NEAR/5 query asymmetry vs Explorer. Noise sources seen Aug-2026: GTA 6 'Capri' city RTs (10 in one day), a porn performer, Capri-island travel/fashion, Norwegian company 'Capri AS', and classic 1970s/80s Capri content. Heritage-vs-new-Capri backlash tweets are NOT noise - they are the X story."
   },
   "Puma": {
     "segment": "EU5",
     "competitors": ["Peugeot 2008", "Toyota Yaris Cross", "Hyundai Kona", "VW T-Cross"],
     "chart_roles": {"volume": "chart9", "country": "chart10", "platform": "chart11", "sentiment": "chart12"},
     "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
-    "verify_chart_roles": true,
-    "notes": "EU5; 4 competitors (NOT 6). Chart order is known to be swapped from the Explorer template (source deck has platform/sentiment in different positions). The chart_roles above are a PLACEHOLDER - run `roles` to confirm against the real skeleton before running `charts`. build_skeleton EU7 subtitle bug applies here too."
+    "verify_chart_roles": false,
+    "require_context": "ford|gen-?e\\b|ecoboost|puma\\s*st\\b|crossover|\\bsuv|b-suv|mild.?hybrid|fiesta|kuga|puma\\s*(hybrid|racing|mk|ii\\b)|leasing|matricul|registration|immatricol|rally1|m-sport|\\bwrc\\b",
+    "noise_patterns": ["sneaker", "adidas", "nike", "Puma SE", "sportswear", "footwear", "zapatillas", "bambas", "équipementier", "equipaci[oó]n", "PUMA House", "mountain lion", "cougar", "puma yonki", "SdKfz", "Puma 4x4", "Puma de Baracoa", "K92 Mining", "Hensoldt"],
+    "notes": "EU5; 4 competitors (NOT 6). 'Puma' is also a sportswear brand, an animal and a military vehicle: ~10% of raw rows (Aug-2026) had no Ford/car context. A further ~20-25% of raw Puma rows are WRC coverage of the Puma Rally1 / M-Sport race car - kept in the reporting series per the July-2026 analyst direction (the Aug-2026 cleaned workbook lists it under its own Excluded label so it can be toggled). Peugeot 2008 boolean also catches '2008' as a year; T-Cross boolean catches generic VW/Golf/Polo pieces. Chart order is known to be swapped from the Explorer template (source deck has platform/sentiment in different positions). chart_roles verified on the July-2026 deck (chart1 volume, chart2 country, chart3 platform, chart4 sentiment; 5 sentiment categories Kona, 2008, Yaris Cross, T-Cross, Puma; diamonds named 'Positive <Month>'/'Negative <Month>'). build_skeleton EU7 subtitle bug applies here too."
   }
 }

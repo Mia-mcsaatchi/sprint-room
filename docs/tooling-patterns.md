@@ -25,6 +25,19 @@ python3 tools/bw_read.py FILE.xlsx --querydist   # validate contents by Query Na
 python3 tools/bw_read.py FILE.xlsx --head 20
 ```
 
+For pandas work use `bw_read.load_dataframe(path)` — it returns a DataFrame keyed by header
+label with `Date` parsed and `Month` bucketed on the local-time month boundary (a 23:xx UTC
+mention on the last day of the month belongs to the next month, which is what Brandwatch's own
+`23:00:00` column label reflects). `extract_drivers.py`, `validate_inputs.py` and
+`tools/dataset_flags.py` all load through it.
+
+- **LibreOffice CSV conversion can fail outright**, not just unreliably: on the Capri Aug-2026
+  export `soffice --convert-to csv` returned "source file could not be loaded" and produced no
+  file. The skill scripts keep it only as a fallback when `bw_read` cannot be imported.
+- **Column letters move between exports.** The Capri Aug-2026 file had 177 columns (not 186);
+  `Full Text` was `AF`, `Reach (new)` `BX`, `Page Type Name` `DW`. Never address a column by
+  letter — look it up by header name.
+
 ## OOXML deck manipulation
 
 Unpack via `unzip`, manipulate the XML directly (lxml for charts, regex for slide text and
@@ -38,6 +51,15 @@ rels), repack via `zip -Xr` from **inside** the unpacked directory, then validat
 - **Pack with validation ON.** If packing fails, fix the cause — don't disable validation. A
   common cause is an empty self-closing `<c:ext .../>` in a duplicated chart (add a child or
   remove the element).
+
+## The Capri deck is NOT the Explorer template
+
+Read chart roles and categories from the deck, never from the docs. In the Capri June-2026 deck:
+chart1 = volume (8 series incl. `Average` = mean of all 7 models), chart2 = **platform** pie,
+chart3 = **country** pie (2-letter codes), chart4 = sentiment with **7** categories and 7 diamonds;
+three manual text boxes label the Capri / Average / Enyaq Coupe line ends and must be moved when
+values change (their y-position mapping only holds if the value axis is pinned to 0–600). Full
+table in [`../tools/catchup/README.md`](../tools/catchup/README.md).
 
 ## Known `build_skeleton.py` bugs — manual fix EVERY cycle
 

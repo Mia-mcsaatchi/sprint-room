@@ -6,7 +6,10 @@ handling, not openpyxl).
 
 ## Raw "Bulk Mentions Download" export
 
-One row per mention. **186 columns** (A → GD). Structure:
+One row per mention. **~180 columns** — 186 (A → GD) in the schema-only sample, 177 in the Capri
+Aug-2026 export. The column *set* is stable but the *letters* are not (Full Text has been seen at
+both `AI` and `AF`), so always look columns up by header name; the letters below are the sample's.
+Structure:
 
 - **Rows 1–5:** metadata block — `Report:`, `Brand:` (the tracked models across columns B..),
   `From:`, `To:`, `Label:`.

@@ -17,6 +17,31 @@ Usage:
 """
 import argparse, sys, re, zipfile, subprocess, os, tempfile
 
+# Carline + competitor count per README ("Competitor counts differ").
+EXPECTED_QUERIES = {'Capri': 7, 'Explorer': 6, 'Kuga': 6, 'Puma': 5}
+
+_TOOLS = [os.environ.get('BW_TOOLS_DIR', ''),
+          os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'tools')]
+for _t in _TOOLS:
+    if _t and os.path.isdir(_t) and _t not in sys.path:
+        sys.path.insert(0, _t)
+
+def load_raw_df(xlsx_path):
+    """DataFrame of the raw export via tools/bw_read (preferred) or LibreOffice CSV fallback."""
+    try:
+        from bw_read import load_dataframe
+        return load_dataframe(xlsx_path)
+    except ImportError:
+        pass
+    csv_text = parse_xlsx_to_csv(xlsx_path)
+    if csv_text is None:
+        return None
+    import pandas as pd, io
+    df = pd.read_csv(io.StringIO(csv_text), low_memory=False)
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df['Month'] = df['Date'].dt.month
+    return df
+
 def parse_xlsx_to_csv(xlsx_path):
     """Use libreoffice to convert xlsx to CSV (handles styles issues)."""
     with tempfile.TemporaryDirectory() as td:
@@ -58,14 +83,11 @@ def main():
 
     # 1. Raw data: convert and check
     print(f"\n=== Raw data ({args.raw}) ===")
-    csv_text = parse_xlsx_to_csv(args.raw)
-    if csv_text is None:
-        issues.append(f"Could not convert {args.raw} to CSV")
+    expected_q = EXPECTED_QUERIES[args.carline]
+    df = load_raw_df(args.raw)
+    if df is None or df.empty:
+        issues.append(f"Could not read {args.raw} (bw_read found no data rows / LibreOffice conversion failed)")
     else:
-        import pandas as pd, io
-        df = pd.read_csv(io.StringIO(csv_text), low_memory=False)
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df['Month'] = df['Date'].dt.month
         if 'Query Name' not in df.columns:
             issues.append("raw.xlsx missing 'Query Name' column")
         else:
@@ -73,8 +95,9 @@ def main():
             info.append(f"Raw data: {len(df)} rows, {len(queries)} queries: {sorted(queries)}")
             if args.carline not in queries and not any(args.carline in str(q) for q in queries):
                 issues.append(f"Carline '{args.carline}' not found in Query Name column. Got: {sorted(queries)}")
-            if len(queries) != 6:
-                issues.append(f"Expected 6 queries (1 carline + 5 competitors), got {len(queries)}")
+            if len(queries) != expected_q:
+                issues.append(f"Expected {expected_q} queries for {args.carline} (carline + "
+                              f"{expected_q-1} competitors), got {len(queries)}")
             # Month coverage
             month_counts = df.groupby('Month').size().to_dict()
             info.append(f"Rows per month: {month_counts}")
@@ -112,8 +135,8 @@ def main():
     if queries_row:
         queries = [c[1] for c in queries_row[1][1:]]
         info.append(f"Sentiment competitors: {queries}")
-        if len(queries) != 6:
-            issues.append(f"Sentiment chart has {len(queries)} competitors, expected 6")
+        if len(queries) != expected_q:
+            issues.append(f"Sentiment chart has {len(queries)} models, expected {expected_q} for {args.carline}")
 
     # 4. Platform chart: detect unfiltered vs carline-filtered
     print(f"\n=== Platform chart export ({args.platform}) ===")
