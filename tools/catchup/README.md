@@ -79,3 +79,19 @@ unambiguous non-car noise out, so the line and the diamonds stay like-for-like; 
 July (~40 rows) is stated in the notes. Puma template: chart1 volume (Puma, Yaris Cross, 2008, Kona,
 T-Cross, Average = mean of 5), chart2 country pie (UK, ES, IT, FR, DE), chart3 platform pie (Online
 News, Forums, X, Blogs, Review), chart4 sentiment with 5 categories and diamond Y = 3, 9, 15, 21, 27.
+
+### Kuga Aug-2026 (same roll-forward, different template constants)
+
+Kuga template (July-2026 deck): chart1 volume with series Tiguan, 3008, Tucson, Jaecoo 7, Kuga, Bigster, Average
+(mean of 6), `<c:f>` sheet `'Kuga - 2'` rows A12:E18; chart2 country pie (UK, ES, DE, IT, FR, `Sheet1!A12:B16`);
+chart3 platform pie with **6** slices (Forums, Online News, X, Review, Blogs, Tumblr — Tumblr is 0);
+chart4 sentiment with 6 categories (Hyundai Tucson, Jaecoo 7, Dacia Bigster, Peugeot 3008, VW Tiguan, Kuga),
+sheet `Kuga` (labels J12:J14, categories K11:P11, diamonds rows 17/19/21), diamond series **'Positive Pre' /
+'Negative Pre'** (names unchanged month to month), Y = 2.6 … 27.6. Bullets in `TextBox 6`, title in `Title 3`
+("Kuga – Social Media (EU5 August 26)"). The July deck's sentiment bar labels carried `<c:manualLayout>` nudges —
+strip them like the pie labels.
+
+Basis trap that mattered: the published deck's diamond series hold the **prior** month (June on the July slide),
+so the new slide's diamonds are the last deck's `positive` / `negative` **bar** caches, never its diamond caches.
+Sanity check: last-deck bar value for the carline × its published volume must equal the published pos/neg count
+(Kuga: 0.03484 × 775 = 27).

@@ -16,7 +16,8 @@
     "chart_roles": {"volume": "chart9", "country": "chart10", "platform": "chart11", "sentiment": "chart12"},
     "sentiment_series_casing": {"positive_pre": "Positive Pre", "negative_pre": "Negative Pre"},
     "verify_chart_roles": false,
-    "notes": "EU5. build_skeleton hardcodes EU7 in the subtitle regex - fix subtitle manually. Sentiment series names are Capitalised ('Positive Pre'/'Negative Pre')."
+    "noise_patterns": ["Toya Kuga", "Digimon", "Arcanadea", "Hemmingstedt", "Dagbon", "4chan"],
+    "notes": "EU5. build_skeleton hardcodes EU7 in the subtitle regex - fix subtitle manually. Sentiment series names are Capitalised ('Positive Pre'/'Negative Pre'); the diamond series in a published deck hold the PRIOR month, so the new month's diamonds come from that deck's 'positive'/'negative' BARS, not its diamonds. The Kuga query is clean (Aug-2026: 9 homonym rows in two months - a Digimon card 'Toya Kuga', a 4chan/anime character, a football report, an obituary); the July-2026 deck reported the raw count whole and retagged passing pos/neg mentions to neutral - keep that basis. Watch Spanish dealer-PR syndications (Ford Nicolas: 59 rows on 30-31 Aug 2026) and the Ford-Geely Almussafes story (373 rows Jul, 82 Aug). chart_roles verified on the July-2026 deck: chart1 volume (series Tiguan, 3008, Tucson, Jaecoo 7, Kuga, Bigster, Average = mean of 6; sheet 'Kuga - 2'), chart2 country pie (UK, ES, DE, IT, FR), chart3 platform pie (Forums, Online News, X, Review, Blogs, Tumblr), chart4 sentiment with 6 categories (Hyundai Tucson, Jaecoo 7, Dacia Bigster, Peugeot 3008, VW Tiguan, Kuga; sheet 'Kuga'; diamond Y = 2.6, 7.6, 12.6, 17.6, 22.6, 27.6). Bullets live in 'TextBox 6', title in 'Title 3' as 'Kuga – Social Media (EU5 <Month> 26)'."
   },
   "Capri": {
     "segment": "EU7",
