@@ -1,6 +1,6 @@
 """Tier-1 content pack for the Capri July + August 2026 slides: every number, cluster and URL the
 charts, bullets and notes need, computed from the cleaned dataset. Writes JSON + a readable markdown."""
-import sys, re, json, pandas as pd
+import os, sys, re, json, pandas as pd
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))  # tools/bw_read
 from openpyxl import load_workbook
 
