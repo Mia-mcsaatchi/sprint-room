@@ -25,7 +25,8 @@ chart12=platform`. Other carlines do **not** follow this. Known mappings:
 
 | Carline | Chart 10 | Chart 11 | Chart 12 | Notes |
 |---------|----------|----------|----------|-------|
-| **Explorer** (skill default) | Country | Sentiment | Platform | volume = chart9; 5 competitors |
+| **Explorer** (skill default — **superseded**) | Country | Sentiment | Platform | the skill's documented order; does not match the live deck |
+| **Explorer** (verified, June 2026 deck) | **Country** | **Platform** | **Sentiment** | volume = chart9; 5 competitors; see [`tooling-patterns.md`](tooling-patterns.md#template-facts-explorer-deck-as-of-june-2026) |
 | **Kuga** | **Country** | **Platform** | **Sentiment** | EU5 |
 | **Capri** | **Platform** | **Country** | **Sentiment** | EU7; 6 competitors |
 | **Puma** | order swapped from Explorer template (`chart3=platform`, `chart4=sentiment`) | | | EU5; **5 competitors, not 6** |

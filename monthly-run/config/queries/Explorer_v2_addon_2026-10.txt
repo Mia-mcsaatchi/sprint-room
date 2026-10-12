@@ -1,0 +1,6 @@
+OR ( ( "explorer yacht" OR "explorer yachts" OR "Explorer-Yacht" OR superyacht OR gigayacht OR "ISLE Explorer"
+    OR "mineral resources" OR "Explorer/Developer" OR lithium OR Westwater OR "Surge Battery"
+    OR "Datei-Explorer" OR "Sunny Explorer" OR "Windows 11"
+    OR Cagiva OR "Lucky Explorer" OR "Eco Rider" OR "Roto VR"
+    OR NASA OR "explorer Magazin" )
+  AND NOT ford )

@@ -1,5 +1,8 @@
 # Monthly Run — Runbook
 
+> Running the month with Claude Code? Follow [`../docs/claude-handover.md`](../docs/claude-handover.md)
+> — it wraps these steps in ready-to-use prompts and lists the current hand-over state.
+
 The turnkey sequence for one carline, one month. The orchestrator ([`run.py`](run.py)) calls
 the skill's scripts with the right arguments and per-carline config
 ([`config/carlines.json`](config/carlines.json)); this runbook is the checklist around it,

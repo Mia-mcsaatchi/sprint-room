@@ -52,6 +52,44 @@ These recur; assume they are present until proven otherwise:
    `[Content_Types].xml`, and re-insert the `rId2` relationship into the new slide's rels.
 4. **Hardcoded `EU7` in the subtitle regex.** Fails for EU5 carlines (**Kuga, Puma**) — apply the
    subtitle update manually for those.
+5. **Duplicated charts still share the old embedding and theme override.** It copies
+   `chartN.xml`, `colorsN`, `styleN` and the rels, but the new chart's rels keep pointing at the
+   *old* `Microsoft_Excel_Worksheet*.xlsx` and `themeOverrideN.xml`. Editing the new chart's data
+   then rewrites last month's workbook (the "never share one xlsx" trap). Copy the embedding and
+   theme override per new chart, repoint the rels, and register the theme overrides in
+   `[Content_Types].xml`.
+6. **Hardcoded `/mnt/skills/...` paths** for `unpack.py` / `add_slide.py`. In Claude Code cloud
+   sessions the pptx skill lives elsewhere; unpack with `zipfile` and duplicate parts directly.
+
+The Sept 2026 Explorer build did all of the above by hand in one script (duplicate slide + charts
++ embeddings + theme overrides + notes, retarget hyperlinks, refill caches and workbooks), then ran
+the pptx skill's `clean.py` and `validate.py --original last_month.pptx`. Ask Claude to follow the
+same approach rather than `build_skeleton.py` as-is.
+
+## Template facts (Explorer deck, as of June 2026)
+
+- Reporting slide charts: **chart1 = volume (line)**, **chart2 = country (pie)**,
+  **chart3 = platform (pie)**, **chart4 = sentiment (bar + scatter diamonds)**.
+- Workbook sheets: `'Explorer July'` (volume, country, sentiment), `'Explorer'` (platform).
+  Volume `A1:E8` (row 1 months, rows 2–7 models, row 8 `=AVERAGE`); sentiment `A1:G7`
+  (row 1 models; rows 2–4 pos/neu/neg; row 5 prior positive; row 6 `1 − prior negative`;
+  row 7 Y = 3, 8.75, 14.6, 20.5, 26.3, 32.1); platform `A1:B6`.
+- **Country pie quirk:** the chart formula points at `A1:B7` but the template workbook holds the
+  values at `A22:B28`. Write the new values to both so "Edit Data" and the chart agree.
+- Fixed orders — volume: Enyaq, XC40 Recharge/ EX40, E-3008, Megane E-Tech, ID.4, Explorer;
+  sentiment: Megane E-Tech, Peugeot E3008, Skoda Enyaq, Volvo XC40 Recharge/ EX40, VW id4,
+  Explorer; country codes UK, ES, DE, FR, IT, NL, NO; platforms Online News, X, Forums, Blogs,
+  Review, Tumblr.
+- The Summary text box (`TextBox 16`) is `spAutoFit` and already reaches the slide bottom — keep
+  bullets about as long as last month's; overflow goes to the notes.
+- Notes follow `Insight 2` (country all/news, competitor platform breakdown) and `Insight 3`
+  (positive/negative by content source) headings.
+
+## Driver extraction
+
+`scripts/extract_drivers.py` reads the raw export via LibreOffice CSV conversion, which is
+unreliable for Brandwatch files (see above). Load the export with `tools/bw_read.py` instead and
+apply the same clustering (normalised title, news + blog first).
 
 ## Backing xlsx pitfalls (caused "PowerPoint found a problem" in the Explorer build)
 
@@ -75,3 +113,16 @@ When rendering to PDF for QA, ignore these (PowerPoint renders correctly):
 - Bullet 3 clips at the bottom edge (PowerPoint autofit handles it).
 
 Chase real data anomalies (wrong %, missing categories, labels showing old values) — not these.
+
+## Rendering in a fresh cloud session
+
+Claude Code cloud containers may ship only `libreoffice-core`, which opens nothing ("source file
+could not be loaded", even for a .txt). Install Impress once per session:
+
+```bash
+apt-get install -y --no-install-recommends libreoffice-impress
+```
+
+Then render with the pptx skill's `scripts/office/soffice.py --headless --convert-to pdf` and
+`pdftoppm`. Hyperlinks can render in different colours in LibreOffice even when their XML is
+identical — PowerPoint applies the theme hyperlink colour to all of them.

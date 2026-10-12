@@ -12,11 +12,13 @@ can be handed over or migrated without knowledge living only in someone's head.
 
 | Path | What it is |
 |------|-----------|
+| [`docs/claude-handover.md`](docs/claude-handover.md) | **New here? Start with this.** Step-by-step guide to running a month with Claude Code (setup, prompts, approval steps, pitfalls) and the current hand-over state |
 | [`monthly-run/`](monthly-run/) | **Run this monthly.** Orchestrator (`run.py`) + [`RUNBOOK.md`](monthly-run/RUNBOOK.md) + per-carline [`config`](monthly-run/config/carlines.json) that drives a full cycle |
 | [`docs/`](docs/) | The knowledge base — process, standards, calculations, slide configs, tooling patterns, data dictionary, glossary |
 | [`skills/`](skills/) | The automation **skills** verbatim (SKILL.md + scripts + references) — the engine `monthly-run` calls |
 | [`process/`](process/) | Source-of-truth documents: the 6-phase process doc + the automation architecture PDF |
 | [`samples/`](samples/) | Small fixtures showing **table structure** (not datasets): the four chart-data exports + a structure-only raw-export header |
+| [`monthly-run/config/queries/`](monthly-run/config/queries/) | Versioned Brandwatch boolean queries (back up before editing) |
 | [`tools/`](tools/) | Reusable utilities (e.g. `bw_read.py`, the reliable Brandwatch parser) |
 | [`MIGRATION.md`](MIGRATION.md) | How to stand this up on a new machine / onboard a new analyst |
 
