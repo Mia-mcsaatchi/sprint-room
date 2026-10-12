@@ -3,10 +3,10 @@
   "Explorer": {
     "segment": "EU7",
     "competitors": ["Skoda Enyaq", "VW ID.4", "Renault Megane E-Tech", "Peugeot E-3008", "Volvo XC40 Recharge/EX40"],
-    "chart_roles": {"volume": "chart9", "country": "chart10", "sentiment": "chart11", "platform": "chart12"},
+    "chart_roles": {"volume": "chart9", "country": "chart10", "platform": "chart11", "sentiment": "chart12"},
     "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
     "verify_chart_roles": false,
-    "notes": "Original template; the skill's documented default order."
+    "notes": "Verified against the June 2026 Explorer deck: chart1=volume, chart2=country, chart3=platform, chart4=sentiment (duplicated to chart9-12). This differs from the skill's documented default (country/sentiment/platform). Country pie formula points at A1:B7 while the template workbook holds data at A22:B28 - write both. Query refined Sept 2026, see config/queries/."
   },
   "Kuga": {
     "segment": "EU5",
