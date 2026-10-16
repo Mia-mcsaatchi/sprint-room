@@ -54,6 +54,23 @@ Sheet names inside the xlsx are inherited from the template (e.g. `'Explorer Jul
 9/10/11, `'Explorer'` for chart 12) — arbitrary but **must match** the chart's `<c:f>` refs; they
 don't need to match the carline.
 
+### Kuga's actual layout (differs from the above — confirmed Sep 2026 cycle)
+
+The Kuga deck already embeds one xlsx per chart and registers xlsx via `<Default Extension="xlsx">`,
+so the safest path is to **copy each chart's existing workbook and edit its cells**, not regenerate
+it with `embed_backing_xlsx.py` (whose cell map is Explorer's):
+
+| Chart | Sheet | Cells |
+|-------|-------|-------|
+| Volume | `'Kuga - 2'` | `A11:E11` months, `A12:A17` series (Tiguan, 3008, Tucson, Jaecoo 7, Kuga, Bigster), `A18` Average (`=AVERAGE(B12:B17)`, **includes Kuga**) |
+| Country | `Sheet1` | `A12:B16` (UK, ES, DE, IT, FR) |
+| Platform | `Sheet1` | `A12:B17` (Forums, Online News, X, Review, Blogs, Tumblr) |
+| Sentiment | `Kuga` | `K11:P11` models (Tucson, Jaecoo 7, Bigster, 3008, Tiguan, Kuga); `J12:J14` pos/neu/neg rows; `K17:P17` Y = `[2.6, 7.6, 12.6, 17.6, 22.6, 27.6]`; `K19:P19` `Positive Pre`; `K21:P21` `Negative Pre` (`1 − prior neg`) |
+
+Embedding names: charts 1–4 use `Microsoft_Excel_Worksheet{,1,2,3}.xlsx`, charts 5–8 use `…4–7`.
+When the older slide is dropped, its charts 5–8 and workbooks 4–7 go with it; the new charts 9–12
+take workbooks `…8–11` and their own `themeOverride9–12.xml` copies.
+
 ### Content-Types registration — the corruption trap
 
 - If the deck already registers xlsx via a **`<Default Extension="xlsx">`** entry in

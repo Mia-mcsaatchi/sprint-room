@@ -52,6 +52,13 @@ These recur; assume they are present until proven otherwise:
    `[Content_Types].xml`, and re-insert the `rId2` relationship into the new slide's rels.
 4. **Hardcoded `EU7` in the subtitle regex.** Fails for EU5 carlines (**Kuga, Puma**) — apply the
    subtitle update manually for those.
+5. **Title-slide regex drops the brackets.** The title reads `Social Media (August 2026)`; the
+   script's pattern rewrites it to `Social Media September 2026`. Replace the bracketed text instead.
+6. **Missing helpers.** `build_skeleton.py` / `pack_and_qa.py` call
+   `/mnt/skills/public/pptx/scripts/office/unpack.py` and `pack.py`, which are not present in every
+   environment (only `validate.py` and `soffice.py` were, Sep 2026). Fallback: `unzip` → lxml edits
+   → zip with `[Content_Types].xml` first, then `validate.py out.pptx --original last_month.pptx`.
+   (`ppt/authors.xml` fails the bare schema check in the delivered decks too — pre-existing, ignore.)
 
 ## Backing xlsx pitfalls (caused "PowerPoint found a problem" in the Explorer build)
 
