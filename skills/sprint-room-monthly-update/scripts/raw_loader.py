@@ -17,16 +17,29 @@ from lxml import etree
 NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
 
-def _cell_value(c):
-    if c.get("t") == "inlineStr":
+def _cell_value(c, shared):
+    t = c.get("t")
+    if t == "inlineStr":
         t = c.find(f"{NS}is/{NS}t")
         return t.text if t is not None else ""
     v = c.find(f"{NS}v")
-    return v.text if v is not None else None
+    if v is None:
+        return None
+    return shared[int(v.text)] if t == "s" else v.text
+
+
+def _shared_strings(z):
+    # Brandwatch exports use inline strings; files re-saved by Excel/openpyxl
+    # (e.g. a cleaned export) use the shared-strings table instead.
+    if "xl/sharedStrings.xml" not in z.namelist():
+        return []
+    root = etree.fromstring(z.read("xl/sharedStrings.xml"))
+    return ["".join(si.itertext()) for si in root.iter(f"{NS}si")]
 
 
 def _iter_rows(path):
     with zipfile.ZipFile(path) as z:
+        shared = _shared_strings(z)
         sheet = next((n for n in z.namelist() if n.endswith("worksheets/sheet1.xml")), None)
         sheet = sheet or sorted(n for n in z.namelist() if "worksheets/sheet" in n)[0]
         with z.open(sheet) as fh:
@@ -35,7 +48,7 @@ def _iter_rows(path):
                 for c in el.iter(f"{NS}c"):
                     ref = c.get("r")
                     if ref:
-                        row[re.match(r"[A-Z]+", ref).group()] = _cell_value(c)
+                        row[re.match(r"[A-Z]+", ref).group()] = _cell_value(c, shared)
                 yield row
                 el.clear()
 
@@ -51,7 +64,7 @@ def load_raw(path, tz="Europe/London"):
         recs.append({hdr.get(col, col): val for col, val in row.items()})
     if hdr is None:
         raise RuntimeError(f"{path}: no header row with column B == 'Query Name'")
-    df = pd.DataFrame(recs)
+    df = pd.DataFrame(recs, columns=list(dict.fromkeys(hdr.values())))
     df["Date"] = (pd.to_datetime(df["Date"], errors="coerce")
                     .dt.tz_localize("UTC").dt.tz_convert(tz))
     df["Month"] = df["Date"].dt.month
