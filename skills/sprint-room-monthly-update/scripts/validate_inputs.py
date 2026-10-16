@@ -15,18 +15,12 @@ Usage:
         --platform chart_platform.xlsx --sent chart_sentiment.xlsx \\
         --last-month last_month.pptx
 """
-import argparse, sys, re, zipfile, subprocess, os, tempfile
+import argparse, sys, re, zipfile, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from raw_loader import load_raw
 
-def parse_xlsx_to_csv(xlsx_path):
-    """Use libreoffice to convert xlsx to CSV (handles styles issues)."""
-    with tempfile.TemporaryDirectory() as td:
-        subprocess.run(['libreoffice','--headless','--convert-to','csv','--outdir',td, xlsx_path],
-                       capture_output=True, text=True, timeout=120)
-        csvs = [f for f in os.listdir(td) if f.endswith('.csv')]
-        if not csvs:
-            return None
-        with open(os.path.join(td, csvs[0])) as f:
-            return f.read()
+# Query count in the raw export = carline + its competitor set
+EXPECTED_QUERIES = {'Capri': 7, 'Explorer': 6, 'Kuga': 6, 'Puma': 5}
 
 def inspect_chart_export(xlsx_path):
     """Pull header rows from a Brandwatch chart export."""
@@ -58,14 +52,12 @@ def main():
 
     # 1. Raw data: convert and check
     print(f"\n=== Raw data ({args.raw}) ===")
-    csv_text = parse_xlsx_to_csv(args.raw)
-    if csv_text is None:
-        issues.append(f"Could not convert {args.raw} to CSV")
-    else:
-        import pandas as pd, io
-        df = pd.read_csv(io.StringIO(csv_text), low_memory=False)
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df['Month'] = df['Date'].dt.month
+    try:
+        df = load_raw(args.raw)
+    except Exception as e:
+        issues.append(f"Could not read {args.raw}: {e}")
+        df = None
+    if df is not None:
         if 'Query Name' not in df.columns:
             issues.append("raw.xlsx missing 'Query Name' column")
         else:
@@ -73,8 +65,9 @@ def main():
             info.append(f"Raw data: {len(df)} rows, {len(queries)} queries: {sorted(queries)}")
             if args.carline not in queries and not any(args.carline in str(q) for q in queries):
                 issues.append(f"Carline '{args.carline}' not found in Query Name column. Got: {sorted(queries)}")
-            if len(queries) != 6:
-                issues.append(f"Expected 6 queries (1 carline + 5 competitors), got {len(queries)}")
+            if len(queries) != EXPECTED_QUERIES[args.carline]:
+                issues.append(f"Expected {EXPECTED_QUERIES[args.carline]} queries for {args.carline} "
+                              f"(carline + competitors), got {len(queries)}")
             # Month coverage
             month_counts = df.groupby('Month').size().to_dict()
             info.append(f"Rows per month: {month_counts}")
