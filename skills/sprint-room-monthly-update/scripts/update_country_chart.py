@@ -5,6 +5,9 @@ Update the country pie chart with new month's values + strip manualLayout from l
 Usage:
     python3 update_country_chart.py path/to/chart10.xml --country chart_country.xlsx
 """
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from chart_cache import set_cache
 import argparse, re, zipfile
 
 def read_country_export(path):
@@ -73,10 +76,7 @@ def main():
                 new_vals.append(v)
             print(f"New values in category order: {list(zip(cat_labels, new_vals))}")
 
-            new_val_block = val_block
-            for o, n in zip(old_nums, new_vals):
-                new_val_block = new_val_block.replace(f'<c:v>{o}</c:v>', f'<c:v>{n}</c:v>', 1)
-            xml = xml.replace(val_block, new_val_block, 1)
+            xml = xml.replace(val_block, set_cache(val_block, 'c:val', new_vals), 1)
 
     # Strip manualLayout from data labels (let labels auto-position around new slices)
     before = xml.count('<c:manualLayout>')

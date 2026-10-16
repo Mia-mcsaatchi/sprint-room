@@ -3,28 +3,49 @@
 Pack the unpacked deck with validation ON, render to PDF for QA, run integrity checks.
 
 Usage:
-    python3 pack_and_qa.py unpacked/ output.pptx
+    python3 pack_and_qa.py unpacked/ output.pptx --original last_month.pptx
 """
 import argparse, subprocess, os, re, sys, zipfile
+
+PPTX_SCRIPTS = os.environ.get('PPTX_SCRIPTS', '/mnt/skills/public/pptx/scripts')
+
+
+def pack(unpacked, output):
+    """Zip the unpacked tree into output ([Content_Types].xml first)."""
+    if os.path.exists(output):
+        os.remove(output)
+    files = []
+    for root, _, names in os.walk(unpacked):
+        for n in names:
+            full = os.path.join(root, n)
+            files.append((os.path.relpath(full, unpacked).replace(os.sep, '/'), full))
+    files.sort(key=lambda f: (f[0] != '[Content_Types].xml', f[0]))
+    with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as z:
+        for arc, full in files:
+            z.write(full, arc)
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('unpacked')
     ap.add_argument('output')
+    ap.add_argument('--original', help='source deck, to baseline schema validation against')
     args = ap.parse_args()
 
     # Clean
     print("[1/4] Cleaning orphaned files...")
-    r = subprocess.run(['python3','/mnt/skills/public/pptx/scripts/clean.py', args.unpacked],
+    r = subprocess.run(['python3', os.path.join(PPTX_SCRIPTS, 'clean.py'), args.unpacked],
                        capture_output=True, text=True)
     print(r.stdout)
 
     # Pack with validation ON
     print("[2/4] Packing with strict validation...")
-    r = subprocess.run(['python3','/mnt/skills/public/pptx/scripts/office/pack.py',
-                        args.unpacked, args.output], capture_output=True, text=True)
+    pack(args.unpacked, args.output)
+    cmd = ['python3', os.path.join(PPTX_SCRIPTS, 'office', 'validate.py'), args.output]
+    if args.original:
+        cmd += ['--original', args.original]
+    r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
-        print("PACK FAILED:")
+        print("VALIDATION FAILED:")
         print(r.stdout)
         print(r.stderr)
         print("\nDo NOT skip validation. Fix the underlying issue first. See "
@@ -60,16 +81,19 @@ def main():
 
     # Render
     print("[4/4] Rendering to PDF for visual QA...")
-    r = subprocess.run(['python3','/mnt/skills/public/pptx/scripts/office/soffice.py',
-                        '--headless','--convert-to','pdf', args.output],
+    out_dir = os.path.dirname(os.path.abspath(args.output))
+    r = subprocess.run(['python3', os.path.join(PPTX_SCRIPTS, 'office', 'soffice.py'),
+                        '--headless', '--convert-to', 'pdf', '--outdir', out_dir, args.output],
                        capture_output=True, text=True)
     print(r.stdout)
-    pdf_path = args.output.replace('.pptx','.pdf')
+    pdf_path = os.path.splitext(os.path.abspath(args.output))[0] + '.pdf'
     if os.path.exists(pdf_path):
-        # Render slide 2 (the new month slide)
-        subprocess.run(['pdftoppm','-jpeg','-r','150','-f','2','-l','2', pdf_path, 'slide_qa'],
+        prefix = os.path.join(out_dir, 'slide_qa')
+        subprocess.run(['pdftoppm', '-jpeg', '-r', '150', pdf_path, prefix],
                        capture_output=True, text=True)
-        print(f"\nQA images at slide_qa-2.jpg")
+        print(f"\nPDF: {pdf_path}\nQA images: {prefix}-N.jpg (slide 2 = the new month)")
+    else:
+        print("PDF render failed:", r.stderr)
 
     print(f"\nFinal deck: {args.output}")
     print("Reminder: LibreOffice render shows known quirks (only 1-2 diamonds, bullet 3 clip). "

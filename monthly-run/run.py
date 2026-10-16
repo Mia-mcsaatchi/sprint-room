@@ -20,6 +20,8 @@ Typical cycle
     python run.py newmonth  --carline Kuga --month 2026-07
     # (drop the six exports into the inputs folder it printed)
     python run.py doctor    --carline Kuga --month 2026-07
+    python run.py clean     --carline Kuga --month 2026-07     # optional: work/.../cleaning.csv
+    python run.py exports   --carline Kuga --month 2026-07     # optional: chart exports from cleaned raw
     python run.py validate  --carline Kuga --month 2026-07
     python run.py menu      --carline Kuga --month 2026-07
     #   ---- HARD GATE: review & approve work/.../menu.md ----
@@ -80,6 +82,11 @@ def run(cmd, dry):
     say("  RUN  " + printable, "b")
     return subprocess.call([str(c) for c in cmd])
 
+def raw_for(inp):
+    """Cleaned export if `clean` has been run, else the raw one."""
+    clean = inp / "raw_clean.xlsx"
+    return clean if clean.exists() else inp / "raw.xlsx"
+
 def need(path, what):
     if not Path(path).exists():
         sys.exit(f"Missing {what}: {path}\n  (run earlier stages first, or `doctor` to check inputs)")
@@ -119,9 +126,29 @@ def stage_doctor(a):
 def stage_validate(a):
     inp, _ = paths(a.carline, a.month)
     cmd = ["python3", SCRIPTS / "validate_inputs.py", "--carline", a.carline,
-           "--raw", inp / "raw.xlsx", "--vol", inp / "chart_volume.xlsx",
+           "--raw", raw_for(inp), "--vol", inp / "chart_volume.xlsx",
            "--country", inp / "chart_country.xlsx", "--platform", inp / "chart_platform.xlsx",
            "--sent", inp / "chart_sentiment.xlsx", "--last-month", inp / "last_month.pptx"]
+    return run(cmd, a.dry_run)
+
+def stage_clean(a):
+    inp, work = paths(a.carline, a.month)
+    decisions = work / "cleaning.csv"
+    if not a.dry_run:
+        need(decisions, "cleaning decisions (row,url,action,sentiment,reason)")
+    cmd = ["python3", SCRIPTS / "apply_cleaning.py", "--raw", inp / "raw.xlsx",
+           "--decisions", decisions, "--out", inp / "raw_clean.xlsx",
+           "--log", work / "cleaning_log.csv"]
+    return run(cmd, a.dry_run)
+
+def stage_exports(a):
+    inp, _ = paths(a.carline, a.month)
+    cmd = ["python3", SCRIPTS / "build_chart_exports.py", "--carline", a.carline,
+           "--raw", raw_for(inp), "--month", a.month, "--out-dir", inp]
+    if (inp / "last_month.pptx").exists():
+        cmd += ["--last-month", inp / "last_month.pptx"]
+    say("Overwrites the chart_*.xlsx in the inputs folder with ones built from "
+        f"{raw_for(inp).name} - use only when the Brandwatch exports don't reflect your cleaning.", "y")
     return run(cmd, a.dry_run)
 
 def stage_menu(a):
@@ -129,8 +156,9 @@ def stage_menu(a):
     work.mkdir(parents=True, exist_ok=True)
     _, mm, prior = month_parts(a.month)
     menu = work / "menu.md"
+    say(f"Using {raw_for(inp).name}")
     cmd = ["python3", SCRIPTS / "extract_drivers.py", "--carline", a.carline,
-           "--raw", inp / "raw.xlsx", "--new-month", mm, "--prior-month", prior, "--out", menu]
+           "--raw", raw_for(inp), "--new-month", mm, "--prior-month", prior, "--out", menu]
     rc = run(cmd, a.dry_run)
     if rc == 0 and not a.dry_run:
         say("\n" + "="*70, "y")
@@ -191,6 +219,8 @@ def _infer_role(cats):
         return "volume"
     if any(w in joined for w in ["germany", "united kingdom", "spain", "france", "italy",
                                  "netherlands", "norway"]): return "country"
+    if {c.strip().upper() for c in cats} & {"UK", "DE", "ES", "FR", "IT", "NL", "NO"}:
+        return "country"
     return "unknown"
 
 def stage_roles(a):
@@ -252,16 +282,24 @@ def stage_bullets(a):
 
 def stage_embed(a):
     _, work = paths(a.carline, a.month)
-    say("Reminder: patch embed_backing_xlsx.py's chart mapping for this carline first "
-        "(chart_roles in config/carlines.json). See docs/slide-configs.md.", "y")
-    cmd = ["python3", SCRIPTS / "embed_backing_xlsx.py", work / "skeleton" / "unpacked"]
+    unpacked = work / "skeleton" / "unpacked"
+    rels = unpacked / "ppt" / "charts" / "_rels" / "chart9.xml.rels"
+    if rels.exists() and "/package" in rels.read_text():
+        # Charts already carry their own workbooks (copied by build_skeleton): sync values in.
+        cmd = ["python3", SCRIPTS / "sync_embedded_xlsx.py", unpacked]
+    else:
+        say("Reminder: patch embed_backing_xlsx.py's chart mapping for this carline first "
+            "(chart_roles in config/carlines.json). See docs/slide-configs.md.", "y")
+        cmd = ["python3", SCRIPTS / "embed_backing_xlsx.py", unpacked]
     return run(cmd, a.dry_run)
 
 def stage_pack(a):
     _, work = paths(a.carline, a.month)
     yr, mm, _ = month_parts(a.month)
     out = work / f"{a.carline}_Social_Media_{MONTHS[mm]}_{yr}_Sprint_Room.pptx"
-    cmd = ["python3", SCRIPTS / "pack_and_qa.py", work / "skeleton" / "unpacked", out]
+    inp, _ = paths(a.carline, a.month)
+    cmd = ["python3", SCRIPTS / "pack_and_qa.py", work / "skeleton" / "unpacked", out,
+           "--original", inp / "last_month.pptx"]
     rc = run(cmd, a.dry_run)
     if rc == 0 and not a.dry_run:
         say(f"\nBuilt: {out}", "g")
@@ -270,7 +308,9 @@ def stage_pack(a):
 
 
 STAGES = {
-    "newmonth": stage_newmonth, "doctor": stage_doctor, "validate": stage_validate,
+    "newmonth": stage_newmonth, "doctor": stage_doctor, "clean": stage_clean,
+    "exports": stage_exports,
+    "validate": stage_validate,
     "menu": stage_menu, "skeleton": stage_skeleton, "fixskeleton": stage_fixskeleton,
     "roles": stage_roles, "charts": stage_charts, "bullets": stage_bullets,
     "embed": stage_embed, "pack": stage_pack,

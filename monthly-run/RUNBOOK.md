@@ -47,6 +47,21 @@ python3 run.py validate --carline Kuga --month 2026-07   # runs the skill valida
 (UTC/GMT quirk), missing competitors in the sentiment export, and a platform export that came
 out **unfiltered** (`all`/`all`) — re-export that one filtered to the carline if flagged.
 
+### 2b. Cleaning outside Brandwatch (optional)
+
+When the Phase 1 exclusions / Phase 3 retags can't be made in Brandwatch before export, record
+them in `work/<C>/<YYYY-MM>/cleaning.csv` (`row,url,action,sentiment,reason`; `action` is
+`exclude` or `retag`, `row` is the 0-based data row, `url` guards against a stale row), then:
+
+```bash
+python3 run.py clean   --carline Kuga --month 2026-07   # -> inputs/.../raw_clean.xlsx + work/.../cleaning_log.csv
+python3 run.py exports --carline Kuga --month 2026-07   # chart_*.xlsx rebuilt from raw_clean.xlsx
+```
+
+`validate`, `menu` and `exports` read `raw_clean.xlsx` whenever it exists. `exports` overwrites
+the chart files in the inputs folder; the volume chart needs `last_month.pptx`, because its three
+earlier months are carried forward from the published chart, never re-derived from raw.
+
 ## 3. Bullet menu  ← HARD GATE
 
 ```bash
