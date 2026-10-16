@@ -16,7 +16,9 @@ Usage:
     python3 build_skeleton.py --last-month last.pptx --carline Capri \\
         --new-month "April 2026" --report-date "10.05.2026" --out skeleton/
 """
-import argparse, subprocess, os, shutil, re, sys
+import argparse, subprocess, os, shutil, re, sys, zipfile
+
+PPTX_SCRIPTS = os.environ.get('PPTX_SCRIPTS', '/mnt/skills/public/pptx/scripts')
 
 def main():
     ap = argparse.ArgumentParser()
@@ -35,24 +37,22 @@ def main():
 
     # 1. Unpack
     print(f"[1/8] Unpacking {args.last_month}...")
-    r = subprocess.run(['python3','/mnt/skills/public/pptx/scripts/office/unpack.py',
-                        args.last_month, unpacked], capture_output=True, text=True)
-    if r.returncode != 0:
-        print(r.stderr); sys.exit(1)
+    zipfile.ZipFile(args.last_month).extractall(unpacked)
 
-    # 2. Duplicate slide2 → slide4
-    print("[2/8] Duplicating slide2 → slide4...")
-    r = subprocess.run(['python3','/mnt/skills/public/pptx/scripts/add_slide.py',
+    # 2. Duplicate slide2 → new slide (appended at the end of sldIdLst)
+    print("[2/8] Duplicating slide2...")
+    r = subprocess.run(['python3', os.path.join(PPTX_SCRIPTS, 'add_slide.py'),
                         unpacked, 'slide2.xml'], capture_output=True, text=True)
     if r.returncode != 0:
         print(r.stderr); sys.exit(1)
-    # Parse the new slide id from output
-    m = re.search(r'p:sldId id="(\d+)" r:id="(rId\d+)"', r.stdout)
+    m = re.search(r'Created ppt/slides/(slide\d+)\.xml', r.stdout)
     if not m:
-        print("Could not parse new slide id from add_slide output"); sys.exit(1)
-    new_slide_id = m.group(1)
-    new_slide_rid = m.group(2)
-    print(f"  → new slide id={new_slide_id}, rid={new_slide_rid}")
+        print("Could not parse new slide from add_slide output:\n" + r.stdout); sys.exit(1)
+    new_slide = m.group(1)
+    with open(os.path.join(unpacked, 'ppt/presentation.xml')) as f:
+        new_slide_id, new_slide_rid = re.findall(
+            r'<p:sldId id="(\d+)" r:id="(rId\d+)"/>', f.read())[-1]
+    print(f"  → {new_slide}.xml id={new_slide_id}, rid={new_slide_rid}")
 
     # 3. Reorder presentation.xml sldIdLst
     print("[3/8] Reordering sldIdLst...")
@@ -78,9 +78,11 @@ def main():
     with open(pres_path, 'w') as f:
         f.write(pres)
 
-    # 4. Duplicate chart1–4 → chart9–12 (plus colors, styles)
+    # 4. Duplicate chart1–4 → chart9–12 (plus colors, styles, theme override and
+    #    embedded workbook - each chart must own its parts, never share them)
     print("[4/8] Duplicating charts 1–4 → 9–12...")
     charts_dir = os.path.join(unpacked, 'ppt/charts')
+    copied_parts = []
     for n in [1,2,3,4]:
         new_n = n + 8
         shutil.copy(os.path.join(charts_dir, f'chart{n}.xml'),
@@ -98,12 +100,23 @@ def main():
                 rels = f.read()
             rels = rels.replace(f'colors{n}.xml', f'colors{new_n}.xml')
             rels = rels.replace(f'style{n}.xml', f'style{new_n}.xml')
+            for kind in ('themeOverride', 'package'):
+                tm = re.search(rf'Type="[^"]*/{kind}" Target="\.\./([^"]+)"', rels)
+                if not tm:
+                    continue
+                old = tm.group(1)
+                stem, ext = os.path.splitext(old)
+                new = f'{re.sub(r"\d+$", "", stem)}{new_n}{ext}'
+                shutil.copy(os.path.join(unpacked, 'ppt', old), os.path.join(unpacked, 'ppt', new))
+                rels = rels.replace(f'Target="../{old}"', f'Target="../{new}"')
+                if kind == 'themeOverride':
+                    copied_parts.append(f'/ppt/{new}')
             with open(rels_dst, 'w') as f:
                 f.write(rels)
 
     # 5. Repoint slide4 chart rels to chart9–12
-    print("[5/8] Repointing slide4 rels at chart9–12...")
-    slide4_rels = os.path.join(unpacked, 'ppt/slides/_rels/slide4.xml.rels')
+    print(f"[5/8] Repointing {new_slide} rels at chart9–12...")
+    slide4_rels = os.path.join(unpacked, f'ppt/slides/_rels/{new_slide}.xml.rels')
     with open(slide4_rels) as f:
         r4 = f.read()
     r4 = r4.replace('charts/chart1.xml','charts/chart9.xml')
@@ -126,8 +139,8 @@ def main():
         f.write(s1)
 
     # 7. Update slide4 subtitle (e.g. "Capri – Social Media (EU7 April 2026)")
-    print("[7/8] Updating slide4 subtitle...")
-    slide4 = os.path.join(unpacked, 'ppt/slides/slide4.xml')
+    print(f"[7/8] Updating {new_slide} subtitle...")
+    slide4 = os.path.join(unpacked, f'ppt/slides/{new_slide}.xml')
     with open(slide4) as f:
         s4 = f.read()
     s4 = re.sub(r'(<a:t>[^<]+– Social Media \(EU7 )[^<)]+(\)</a:t>)',
@@ -148,6 +161,8 @@ def main():
         new_entries += f'  <Override PartName="/ppt/charts/chart{n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>\n'
         new_entries += f'  <Override PartName="/ppt/charts/style{n}.xml" ContentType="application/vnd.ms-office.chartstyle+xml"/>\n'
         new_entries += f'  <Override PartName="/ppt/charts/colors{n}.xml" ContentType="application/vnd.ms-office.chartcolorstyle+xml"/>\n'
+    for part in copied_parts:
+        new_entries += f'  <Override PartName="{part}" ContentType="application/vnd.openxmlformats-officedocument.themeOverride+xml"/>\n'
     # Insert before </Types>
     ct = ct.replace('</Types>', new_entries + '</Types>')
     with open(ct_path,'w') as f:

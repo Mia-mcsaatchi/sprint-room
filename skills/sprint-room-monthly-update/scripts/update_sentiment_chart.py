@@ -5,7 +5,7 @@ Update the sentiment combo chart (stacked bars + diamond scatter).
 Bars = new month's pos/neu/neg %s.
 Diamonds = prior month's pos % (positive pre) and 1 - prior month's neg % (Negative Pre).
 
-The PRIOR month diamond values come from the PRIOR month's published chart (chart3.xml
+The PRIOR month diamond values come from the PRIOR month's published chart (the sentiment chart on slide 2,
 inside last_month.pptx), NOT from the new raw data. Last month's published values are
 what the client saw; using newly-retagged numbers creates a mismatch with the
 comparison slide.
@@ -17,7 +17,9 @@ Usage:
         --new-month-sent chart_sentiment.xlsx \\
         --prior-from-last-month last_month.pptx
 """
-import argparse, re, zipfile
+import argparse, os, re, sys, zipfile
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from chart_cache import set_cache, cache_values, norm
 
 def read_sentiment_export(path):
     """Return {model: {pos:N, neu:N, neg:N}}."""
@@ -45,22 +47,30 @@ def read_sentiment_export(path):
                     data[q][sent_key] = 0
     return data
 
-def read_prior_chart3(pptx_path):
-    """Read the prior month's chart3 (sentiment) data — positive and negative series values."""
+def read_prior_sentiment(pptx_path):
+    """Last month's published sentiment bars as {category: (pos, neg)}.
+
+    The chart is found from the deck's slide 2 (last month's slide), as the chart
+    there with 'positive'/'negative' bar series - its chart number differs by
+    carline template (chart3 in Explorer, chart4 in Capri)."""
     with zipfile.ZipFile(pptx_path) as z:
-        xml = z.read('ppt/charts/chart3.xml').decode()
-    result = {}
-    for ser_match in re.finditer(r'<c:ser>(.*?)</c:ser>', xml, re.DOTALL):
-        block = ser_match.group(1)
-        name_m = re.search(r'<c:tx>.*?<c:v>([^<]+)</c:v>', block, re.DOTALL)
-        if not name_m: continue
-        name = name_m.group(1).strip()
-        if name not in ('positive','negative'): continue
-        val_m = re.search(r'<c:val>(.*?)</c:val>', block, re.DOTALL)
-        if val_m:
-            vals = re.findall(r'<c:v>([^<]+)</c:v>', val_m.group(1))
-            result[name] = vals
-    return result
+        rels = z.read('ppt/slides/_rels/slide2.xml.rels').decode()
+        charts = re.findall(r'Target="\.\./charts/(chart\d+\.xml)"', rels)
+        for name in charts:
+            xml = z.read(f'ppt/charts/{name}').decode()
+            sers = {}
+            for block in re.findall(r'<c:ser>.*?</c:ser>', xml, re.DOTALL):
+                nm = re.search(r'<c:tx>.*?<c:v>([^<]+)</c:v>', block, re.DOTALL)
+                if nm:
+                    sers[nm.group(1).strip()] = block
+            if 'positive' in sers and 'negative' in sers:
+                cats = re.findall(r'<c:v>([^<]+)</c:v>',
+                                  re.search(r'<c:cat>(.*?)</c:cat>', sers['positive'], re.DOTALL).group(1))
+                pos = [float(v) for v in cache_values(sers['positive'], 'c:val')]
+                neg = [float(v) for v in cache_values(sers['negative'], 'c:val')]
+                print(f"Prior month's sentiment chart: {name} (slide 2)")
+                return {c: (p, n) for c, p, n in zip(cats, pos, neg)}
+    sys.exit(f"No sentiment chart (positive/negative series) on slide 2 of {pptx_path}")
 
 def main():
     ap = argparse.ArgumentParser()
@@ -71,9 +81,7 @@ def main():
 
     new_sent = read_sentiment_export(args.new_month_sent)
     print(f"New sentiment: {new_sent}")
-    prior_chart3 = read_prior_chart3(args.prior_from_last_month)
-    print(f"Prior chart3 positive: {prior_chart3.get('positive')}")
-    print(f"Prior chart3 negative: {prior_chart3.get('negative')}")
+    prior = {norm(k): v for k, v in read_prior_sentiment(args.prior_from_last_month).items()}
 
     with open(args.chart_xml) as f:
         xml = f.read()
@@ -93,19 +101,16 @@ def main():
     # Map chart category names to export query names
     def find_export_match(chart_name, queries):
         for q in queries:
-            if q.strip().lower() == chart_name.strip().lower(): return q
+            if norm(q) == norm(chart_name): return q
         for q in queries:
-            cl = chart_name.strip().lower(); ql = q.strip().lower()
-            if cl in ql or ql in cl: return q
+            if norm(chart_name) in norm(q) or norm(q) in norm(chart_name): return q
         return None
 
     new_vals_pos, new_vals_neu, new_vals_neg = [], [], []
     for cn in chart_cats:
         q = find_export_match(cn, list(new_sent.keys()))
         if not q:
-            print(f"  WARN: no export match for chart cat '{cn}'")
-            new_vals_pos.append(0); new_vals_neu.append(0); new_vals_neg.append(0)
-            continue
+            sys.exit(f"No export query matches chart category '{cn}' - exports: {list(new_sent)}")
         c = new_sent[q]
         tot = c['pos']+c['neu']+c['neg']
         if tot == 0:
@@ -115,39 +120,28 @@ def main():
             new_vals_neu.append(c['neu']/tot)
             new_vals_neg.append(c['neg']/tot)
 
-    # Diamond values from prior chart3 (in same category order)
-    prior_pos = [float(v) for v in prior_chart3.get('positive', [])]
-    prior_neg = [float(v) for v in prior_chart3.get('negative', [])]
-    new_pos_pre = prior_pos
-    new_neg_pre = [1 - n for n in prior_neg]
+    # Diamonds = last month's published bars, matched by category name
+    missing = [cn for cn in chart_cats if norm(cn) not in prior]
+    if missing:
+        sys.exit(f"Prior month's chart has no category for {missing}")
+    new_pos_pre = [prior[norm(cn)][0] for cn in chart_cats]
+    new_neg_pre = [1 - prior[norm(cn)][1] for cn in chart_cats]
 
     print(f"\nNew bar values:")
     for i, cn in enumerate(chart_cats):
         print(f"  {cn}: pos {new_vals_pos[i]*100:.2f}% / neu {new_vals_neu[i]*100:.2f}% / neg {new_vals_neg[i]*100:.2f}%")
-    print(f"\nDiamond X (from prior chart3):")
+    print(f"\nDiamond X (last month's published bars):")
     for i, cn in enumerate(chart_cats):
         print(f"  {cn}: pos {new_pos_pre[i]*100:.2f}% / 1-neg {new_neg_pre[i]*100:.2f}%")
 
-    # Replace each series's values atomically
+    # Replace each series's cached values by point index
     def replace_series(content, anchor, new_list, kind='val'):
-        # kind: 'val' or 'xVal'
-        m = re.search(rf'<c:v>{re.escape(anchor)}</c:v>.*?</c:ser>', content, re.DOTALL)
-        if not m: return content, 0
-        block = m.group(0)
-        target_tag = 'c:xVal' if kind=='xVal' else 'c:val'
-        val_m = re.search(rf'<{target_tag}>(.*?)</{target_tag}>', block, re.DOTALL)
-        if not val_m: return content, 0
-        val_block = val_m.group(0)
-        old_nums = re.findall(r'<c:v>([^<]+)</c:v>', val_block)
-        new_val_block = val_block
-        n = 0
-        for o, new_v in zip(old_nums, new_list):
-            t = f'<c:v>{o}</c:v>'
-            if t in new_val_block:
-                new_val_block = new_val_block.replace(t, f'<c:v>{new_v:.17g}</c:v>', 1)
-                n += 1
-        new_block = block.replace(val_block, new_val_block, 1)
-        return content.replace(block, new_block, 1), n
+        tag = 'c:xVal' if kind == 'xVal' else 'c:val'
+        for block in re.findall(r'<c:ser>.*?</c:ser>', content, re.DOTALL):
+            nm = re.search(r'<c:tx>.*?<c:v>([^<]+)</c:v>', block, re.DOTALL)
+            if nm and nm.group(1).strip().lower() == anchor.lower():  # Kuga: 'Positive Pre'
+                return content.replace(block, set_cache(block, tag, [f'{v:.17g}' for v in new_list]), 1), len(new_list)
+        return content, 0
 
     xml, n1 = replace_series(xml, 'positive', new_vals_pos, 'val')
     xml, n2 = replace_series(xml, 'neutral', new_vals_neu, 'val')

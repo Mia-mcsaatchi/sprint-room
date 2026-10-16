@@ -219,6 +219,8 @@ def _infer_role(cats):
         return "volume"
     if any(w in joined for w in ["germany", "united kingdom", "spain", "france", "italy",
                                  "netherlands", "norway"]): return "country"
+    if {c.strip().upper() for c in cats} & {"UK", "DE", "ES", "FR", "IT", "NL", "NO"}:
+        return "country"
     return "unknown"
 
 def stage_roles(a):
@@ -280,16 +282,24 @@ def stage_bullets(a):
 
 def stage_embed(a):
     _, work = paths(a.carline, a.month)
-    say("Reminder: patch embed_backing_xlsx.py's chart mapping for this carline first "
-        "(chart_roles in config/carlines.json). See docs/slide-configs.md.", "y")
-    cmd = ["python3", SCRIPTS / "embed_backing_xlsx.py", work / "skeleton" / "unpacked"]
+    unpacked = work / "skeleton" / "unpacked"
+    rels = unpacked / "ppt" / "charts" / "_rels" / "chart9.xml.rels"
+    if rels.exists() and "/package" in rels.read_text():
+        # Charts already carry their own workbooks (copied by build_skeleton): sync values in.
+        cmd = ["python3", SCRIPTS / "sync_embedded_xlsx.py", unpacked]
+    else:
+        say("Reminder: patch embed_backing_xlsx.py's chart mapping for this carline first "
+            "(chart_roles in config/carlines.json). See docs/slide-configs.md.", "y")
+        cmd = ["python3", SCRIPTS / "embed_backing_xlsx.py", unpacked]
     return run(cmd, a.dry_run)
 
 def stage_pack(a):
     _, work = paths(a.carline, a.month)
     yr, mm, _ = month_parts(a.month)
     out = work / f"{a.carline}_Social_Media_{MONTHS[mm]}_{yr}_Sprint_Room.pptx"
-    cmd = ["python3", SCRIPTS / "pack_and_qa.py", work / "skeleton" / "unpacked", out]
+    inp, _ = paths(a.carline, a.month)
+    cmd = ["python3", SCRIPTS / "pack_and_qa.py", work / "skeleton" / "unpacked", out,
+           "--original", inp / "last_month.pptx"]
     rc = run(cmd, a.dry_run)
     if rc == 0 and not a.dry_run:
         say(f"\nBuilt: {out}", "g")

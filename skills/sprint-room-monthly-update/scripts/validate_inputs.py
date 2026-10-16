@@ -3,9 +3,9 @@
 Validate Sprint Room inputs before any deck-building work begins.
 
 Checks:
-- raw.xlsx contains expected 6 competitors in Query Name column
+- raw.xlsx contains the carline + its competitor queries in Query Name column
 - chart_volume.xlsx 4th column is the new reporting month
-- chart_sentiment.xlsx covers all 6 competitors for the new month
+- chart_sentiment.xlsx covers all of them for the new month
 - chart_platform.xlsx is carline-specific (NOT the unfiltered "all" variant)
 - Sentiment %s computed from raw data per competitor for new and prior month
 
@@ -77,8 +77,8 @@ def main():
     # 2. Volume chart: 4th column should be the new month
     print(f"\n=== Volume chart export ({args.vol}) ===")
     rows = inspect_chart_export(args.vol)
-    # Find header row (typically row 11 = months)
-    header_row = next((r for r in rows if any('months' in str(c[1]).lower() for c in r[1])), None)
+    # Header row (typically row 11) starts with 'months'; row 2 ("Dimension 1 | months") must not match
+    header_row = next((r for r in rows if r[1] and str(r[1][0][1]).strip().lower() == 'months'), None)
     if header_row:
         month_cols = [c[1] for c in header_row[1][1:]]
         info.append(f"Volume chart columns: {month_cols}")
@@ -105,8 +105,9 @@ def main():
     if queries_row:
         queries = [c[1] for c in queries_row[1][1:]]
         info.append(f"Sentiment competitors: {queries}")
-        if len(queries) != 6:
-            issues.append(f"Sentiment chart has {len(queries)} competitors, expected 6")
+        if len(queries) != EXPECTED_QUERIES[args.carline]:
+            issues.append(f"Sentiment chart has {len(queries)} queries, expected "
+                          f"{EXPECTED_QUERIES[args.carline]} for {args.carline}")
 
     # 4. Platform chart: detect unfiltered vs carline-filtered
     print(f"\n=== Platform chart export ({args.platform}) ===")

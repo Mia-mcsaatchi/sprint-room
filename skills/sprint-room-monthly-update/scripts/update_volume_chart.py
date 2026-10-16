@@ -12,6 +12,9 @@ Series-name matching is done via the <c:v> series identifier inside <c:ser>.
 Usage:
     python3 update_volume_chart.py path/to/chart9.xml --vol chart_volume.xlsx
 """
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from chart_cache import set_cache
 import argparse, re, zipfile
 
 MONTH_NAMES = ['January','February','March','April','May','June','July','August',
@@ -93,15 +96,7 @@ def main():
     # 2. Replace each series's values — match by series name + old vals sequence
     # Find each <c:ser> block, identify its model name, swap in new values
     def replace_series_vals(block, new_vals):
-        # Replace the c:val numCache values one by one in order
-        old_vals = re.findall(r'<c:val>.*?</c:val>', block, re.DOTALL)
-        if not old_vals: return block
-        val_block = old_vals[0]
-        old_nums = re.findall(r'<c:v>([^<]+)</c:v>', val_block)
-        new_val_block = val_block
-        for o, n in zip(old_nums, new_vals):
-            new_val_block = new_val_block.replace(f'<c:v>{o}</c:v>', f'<c:v>{n}</c:v>', 1)
-        return block.replace(val_block, new_val_block, 1)
+        return set_cache(block, 'c:val', new_vals)
 
     # Map chart series name (e.g. "Enyaq", "ID.4") to export name (e.g. "Skoda Enyaq", "VW id4")
     name_map = {
