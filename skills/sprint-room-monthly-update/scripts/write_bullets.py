@@ -136,12 +136,19 @@ def main():
     # Simpler: find the existing three bullet <a:p>...</a:p> sequence and replace it.
     # The summary text-frame is anchored by id="53" or similar; we look for the txBody
     # containing the volume bullet.
-    txbody_m = re.search(
-        r'(<p:txBody>(?:(?!</p:txBody>).)*?Mentions volume(?:(?!</p:txBody>).)*?</p:txBody>)',
-        slide_xml, re.DOTALL)
+    # Locate the summary text frame: the <p:txBody> whose bulleted paragraphs talk about
+    # "mentions". Decks word the volume bullet differently ("Mentions volume ...",
+    # "Ford Explorer mentions fell ..."), so match case-insensitively and require a bullet.
+    txbody_m = None
+    for m in re.finditer(r'<p:txBody>.*?</p:txBody>', slide_xml, re.DOTALL):
+        body = m.group(0)
+        text = ' '.join(re.findall(r'<a:t>([^<]*)</a:t>', body)).lower()
+        if '<a:buChar' in body and 'mentions' in text:
+            txbody_m = m
+            break
     if not txbody_m:
         print("ERROR: could not locate summary txBody"); return
-    old_txbody = txbody_m.group(1)
+    old_txbody = txbody_m.group(0)
     # Inside this txBody, replace from first <a:p>...</a:p> through last </a:p>
     # Keep the bodyPr / lstStyle. Replace all <a:p>...</a:p> entries.
     new_txbody = re.sub(r'(<a:lstStyle[^/]*/>\s*)(<a:p>.*</a:p>)\s*(</p:txBody>)',

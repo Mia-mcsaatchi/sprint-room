@@ -4,10 +4,10 @@
     "segment": "EU7",
     "brand_terms": ["ford", "capri", "meb", "mach-e"],
     "competitors": ["Skoda Enyaq", "VW ID.4", "Renault Megane E-Tech", "Peugeot E-3008", "Volvo XC40 Recharge/EX40"],
-    "chart_roles": {"volume": "chart9", "country": "chart10", "sentiment": "chart11", "platform": "chart12"},
+    "chart_roles": {"volume": "chart9", "country": "chart10", "platform": "chart11", "sentiment": "chart12"},
     "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
     "verify_chart_roles": false,
-    "notes": "Original template; the skill's documented default order."
+    "notes": "Chart order confirmed from the delivered Sep-2026 deck: chart1 volume, chart2 country, chart3 platform, chart4 sentiment (duplicates 9-12 follow the same order). That deck keeps the newest month in slide2/charts1-4 with embedded workbooks (sheet 'Explorer July', data from A1), not the Egnyte-linked layout embed_backing_xlsx.py expects."
   },
   "Kuga": {
     "segment": "EU5",
