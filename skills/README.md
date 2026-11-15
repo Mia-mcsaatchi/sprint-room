@@ -10,7 +10,7 @@ don't drift.
 Rolls a carline deck forward one month: rebuilds the four charts, embeds editable backing xlsx,
 writes evidenced bullets with inline hyperlinks, and drops the oldest comparison slide.
 - `SKILL.md` — the 7-stage workflow (Stage 0 scope → Stage 7 pack/QA).
-- `scripts/` — `validate_inputs.py`, `extract_drivers.py`, `build_skeleton.py`,
+- `scripts/` — `bw_raw.py` (shared raw-export loader), `validate_inputs.py`, `extract_drivers.py`, `build_skeleton.py`,
   `update_{volume,country,sentiment,platform}_chart.py`, `write_bullets.py`,
   `embed_backing_xlsx.py`, `pack_and_qa.py`.
 - `references/` — `pptx_structure.md`, `bullet_writing.md`, `embed_xlsx_pitfalls.md`.

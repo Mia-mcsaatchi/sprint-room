@@ -15,18 +15,13 @@ Usage:
         --platform chart_platform.xlsx --sent chart_sentiment.xlsx \\
         --last-month last_month.pptx
 """
-import argparse, sys, re, zipfile, subprocess, os, tempfile
+import argparse, sys, re, zipfile, os
 
-def parse_xlsx_to_csv(xlsx_path):
-    """Use libreoffice to convert xlsx to CSV (handles styles issues)."""
-    with tempfile.TemporaryDirectory() as td:
-        subprocess.run(['libreoffice','--headless','--convert-to','csv','--outdir',td, xlsx_path],
-                       capture_output=True, text=True, timeout=120)
-        csvs = [f for f in os.listdir(td) if f.endswith('.csv')]
-        if not csvs:
-            return None
-        with open(os.path.join(td, csvs[0])) as f:
-            return f.read()
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from bw_raw import load_raw  # zipfile+lxml reader; LibreOffice CSV can't open BW exports
+
+# Queries in the raw export = carline + its competitor set (see monthly-run/config/carlines.json)
+EXPECTED_QUERIES = {'Capri': 7, 'Explorer': 6, 'Kuga': 6, 'Puma': 5}
 
 def inspect_chart_export(xlsx_path):
     """Pull header rows from a Brandwatch chart export."""
@@ -58,14 +53,12 @@ def main():
 
     # 1. Raw data: convert and check
     print(f"\n=== Raw data ({args.raw}) ===")
-    csv_text = parse_xlsx_to_csv(args.raw)
-    if csv_text is None:
-        issues.append(f"Could not convert {args.raw} to CSV")
-    else:
-        import pandas as pd, io
-        df = pd.read_csv(io.StringIO(csv_text), low_memory=False)
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df['Month'] = df['Date'].dt.month
+    try:
+        df = load_raw(args.raw)
+    except Exception as e:
+        df = None
+        issues.append(f"Could not read {args.raw}: {e}")
+    if df is not None:
         if 'Query Name' not in df.columns:
             issues.append("raw.xlsx missing 'Query Name' column")
         else:
@@ -73,8 +66,9 @@ def main():
             info.append(f"Raw data: {len(df)} rows, {len(queries)} queries: {sorted(queries)}")
             if args.carline not in queries and not any(args.carline in str(q) for q in queries):
                 issues.append(f"Carline '{args.carline}' not found in Query Name column. Got: {sorted(queries)}")
-            if len(queries) != 6:
-                issues.append(f"Expected 6 queries (1 carline + 5 competitors), got {len(queries)}")
+            expected = EXPECTED_QUERIES[args.carline]
+            if len(queries) != expected:
+                issues.append(f"Expected {expected} queries ({args.carline} + {expected-1} competitors), got {len(queries)}")
             # Month coverage
             month_counts = df.groupby('Month').size().to_dict()
             info.append(f"Rows per month: {month_counts}")
@@ -85,7 +79,8 @@ def main():
     print(f"\n=== Volume chart export ({args.vol}) ===")
     rows = inspect_chart_export(args.vol)
     # Find header row (typically row 11 = months)
-    header_row = next((r for r in rows if any('months' in str(c[1]).lower() for c in r[1])), None)
+    # Header row = the row whose column A is 'months' (row 2 'Dimension 1 | months' is metadata)
+    header_row = next((r for r in rows if r[1] and r[1][0][0].startswith('A') and str(r[1][0][1]).strip().lower() == 'months'), None)
     if header_row:
         month_cols = [c[1] for c in header_row[1][1:]]
         info.append(f"Volume chart columns: {month_cols}")
@@ -112,8 +107,9 @@ def main():
     if queries_row:
         queries = [c[1] for c in queries_row[1][1:]]
         info.append(f"Sentiment competitors: {queries}")
-        if len(queries) != 6:
-            issues.append(f"Sentiment chart has {len(queries)} competitors, expected 6")
+        expected = EXPECTED_QUERIES[args.carline]
+        if len(queries) != expected:
+            issues.append(f"Sentiment chart has {len(queries)} models, expected {expected} for {args.carline}")
 
     # 4. Platform chart: detect unfiltered vs carline-filtered
     print(f"\n=== Platform chart export ({args.platform}) ===")
@@ -121,12 +117,19 @@ def main():
     dim1 = next((r[1][1][1] for r in rows if r[1] and 'Dimension 1' in str(r[1][0][1])), None)
     queries = next((r[1][1][1] for r in rows if r[1] and 'Query Id' in str(r[1][0][1])), None)
     info.append(f"Platform Dimension 1: {dim1}; Query Id: {queries}")
-    if dim1 == 'all':
-        # Check if Query Id is a single carline ID
-        if queries and queries.startswith('[') and ',' not in queries:
-            info.append("Platform export: 'all' dim with single carline query — OK (carline-filtered slice)")
-        else:
-            issues.append("Platform export appears to be the unfiltered 'all'/'all' variant. Need carline-specific export.")
+    # The table starts at row 11. An unfiltered pull has an 'all' | 'all' header and rows that are
+    # boolean-component names with 0 volume (see samples/chart-exports/*BAD-EXAMPLE*).
+    hdr11 = next(([c[1] for c in r[1]] for r in rows if r[0] == 11), [])
+    data = [r[1] for r in rows if r[0] > 11 and len(r[1]) >= 2]
+    total = sum(float(c[1][1]) for c in data if re.fullmatch(r'-?[\d.]+', str(c[1][1] or '')))
+    known = {'online news', 'news', 'x', 'twitter', 'forums', 'blogs', 'review', 'reviews',
+             'tumblr', 'reddit', 'instagram', 'facebook', 'youtube', 'tiktok', 'qq', 'bluesky', 'threads'}
+    labels = [str(c[0][1]).strip().lower() for c in data]
+    info.append(f"Platform rows: {[c[0][1] for c in data][:8]} (total volume {total:g})")
+    if [str(h).lower() for h in hdr11[:2]] == ['all', 'all'] or total == 0 \
+            or (labels and not any(l in known for l in labels)):
+        issues.append("Platform export looks UNFILTERED ('all'/'all' header, zero volume or no "
+                      "platform names). Re-export the pageTypes breakdown filtered to the carline.")
 
     # 5. Country chart sanity
     print(f"\n=== Country chart export ({args.country}) ===")

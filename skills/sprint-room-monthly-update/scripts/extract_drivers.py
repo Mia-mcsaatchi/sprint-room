@@ -11,21 +11,11 @@ Usage:
     python3 extract_drivers.py --carline Capri --raw raw.xlsx \\
         --new-month 4 --prior-month 3 --out menu.md
 """
-import argparse, subprocess, os, tempfile, re
+import argparse, os, re, sys
 from collections import defaultdict
 
-def load_raw(xlsx_path):
-    import pandas as pd, io
-    with tempfile.TemporaryDirectory() as td:
-        subprocess.run(['libreoffice','--headless','--convert-to','csv','--outdir',td, xlsx_path],
-                       capture_output=True, text=True, timeout=180)
-        csv_path = os.path.join(td, [f for f in os.listdir(td) if f.endswith('.csv')][0])
-        df = pd.read_csv(csv_path, low_memory=False)
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df['Month'] = df['Date'].dt.month
-    df['Title'] = df['Title'].fillna('').astype(str)
-    df['Full Text'] = df['Full Text'].fillna('').astype(str) if 'Full Text' in df.columns else ''
-    return df
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from bw_raw import load_raw  # zipfile+lxml reader; LibreOffice CSV can't open BW exports
 
 def norm_title(t):
     t = re.sub(r'[^a-z0-9\s]', ' ', t.lower())
@@ -140,20 +130,20 @@ def main():
     # === Empty bullet menu skeleton for analyst to fill ===
     out_lines.append("---\n")
     out_lines.append("## DRAFT BULLET MENU — analyst to confirm/edit\n")
-    out_lines.append("Use the data above to fill these in. Each named driver MUST have a mention count.\n")
-    out_lines.append("### bullet1 (volume)\n")
+    out_lines.append("Use the data above to fill these in. Each named driver MUST have a mention count. Bullet 1 = volume, 2 = drivers, 3 = sentiment.\n")
+    out_lines.append("## bullet1\n")
     out_lines.append("> Mentions volume {direction} for {scope} from {prior month}, with Ford " + args.carline + " {Δ}, alongside ...\n")
-    out_lines.append("### bullet2 (drivers)\n")
-    out_lines.append(f"> {args.carline}'s {direction} was driven by news ({Δ}). Top driver: [STORY] ({count} mentions, {region}). Secondary driver: ...\n")
-    out_lines.append("### bullet3 (sentiment)\n")
+    out_lines.append("## bullet2\n")
+    out_lines.append(f"> {args.carline}'s {{direction}} was driven by news ({{Δ}}). Top driver: [STORY] ({{count}} mentions, {{region}}). Secondary driver: ...\n")
+    out_lines.append("## bullet3\n")
     out_lines.append(f"> {args.carline} sentiment ...\n")
-    out_lines.append("### hyperlinks\n")
+    out_lines.append("## hyperlinks\n")
     out_lines.append("| linked phrase | URL |")
     out_lines.append("|---|---|")
     out_lines.append("| Top story name | https://... |")
     out_lines.append("")
     out_lines.append("---\n")
-    out_lines.append("After analyst confirms, save as `menu_confirmed.md` and proceed to Stage 3.\n")
+    out_lines.append("Edit the bullets above in place (headings must stay `## bullet1/2/3` + `## hyperlinks` - write_bullets.py parses them). `run.py bullets` reads this file.\n")
 
     with open(args.out, 'w') as f:
         f.write('\n'.join(out_lines))

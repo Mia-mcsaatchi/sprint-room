@@ -18,7 +18,10 @@ CSV. Use direct `zipfile` + `lxml iterparse` on `xl/worksheets/sheet1.xml`:
 - **Big files (80MB+):** stream with `iterparse` and call `row.clear()` after each row to avoid
   memory exhaustion.
 
-A ready-made implementation is in [`../tools/bw_read.py`](../tools/bw_read.py):
+The skill's own scripts load raw exports through
+[`../skills/sprint-room-monthly-update/scripts/bw_raw.py`](../skills/sprint-room-monthly-update/scripts/bw_raw.py)
+(same approach, returns a DataFrame, buckets `Month` in Europe/London time to match the dashboard).
+A ready-made standalone CLI is in [`../tools/bw_read.py`](../tools/bw_read.py):
 
 ```bash
 python3 tools/bw_read.py FILE.xlsx --querydist   # validate contents by Query Name
