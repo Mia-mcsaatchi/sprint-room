@@ -47,6 +47,23 @@ python3 run.py validate --carline Kuga --month 2026-07   # runs the skill valida
 (UTC/GMT quirk), missing competitors in the sentiment export, and a platform export that came
 out **unfiltered** (`all`/`all`) — re-export that one filtered to the carline if flagged.
 
+## 2b. Noise scan (Phase 1 aid)
+
+```bash
+python3 run.py noise --carline Kuga --month 2026-07
+```
+
+Carline names are ordinary words, so the query picks up Triumph "Rally Explorer" bikes,
+"MBR Explorer" spacecraft, Puma trainers, Capri holidays... `noise` splits each month into
+rows that mention a brand term (`brand_terms` in `config/carlines.json`, default `ford`) and
+rows that don't, lists repeated non-brand contexts around the carline name (candidate NOT-terms)
+and writes every non-brand row to `work/<C>/<M>/noise_review.csv`.
+
+It only **flags** (£100 rule) — genuine owner chatter often never says "Ford". If the
+no-brand share jumps vs. the prior month, add the NOT-terms in Brandwatch and **re-export the
+raw and chart files** before `menu`; otherwise the volume trend can point the wrong way
+(a ~30% no-brand share is enough to flip a carline's month-on-month direction).
+
 ## 3. Bullet menu  ← HARD GATE
 
 ```bash
@@ -110,6 +127,7 @@ cd monthly-run
 python3 run.py newmonth   --carline C --month YYYY-MM
 python3 run.py doctor     --carline C --month YYYY-MM
 python3 run.py validate   --carline C --month YYYY-MM
+python3 run.py noise      --carline C --month YYYY-MM      # flag boolean noise
 python3 run.py menu       --carline C --month YYYY-MM      # approve menu.md
 python3 run.py skeleton   --carline C --month YYYY-MM --report-date DD.MM.YYYY
 python3 run.py fixskeleton --carline C --month YYYY-MM

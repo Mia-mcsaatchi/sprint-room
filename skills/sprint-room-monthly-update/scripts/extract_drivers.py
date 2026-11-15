@@ -11,21 +11,15 @@ Usage:
     python3 extract_drivers.py --carline Capri --raw raw.xlsx \\
         --new-month 4 --prior-month 3 --out menu.md
 """
-import argparse, subprocess, os, tempfile, re
+import argparse, os, re, sys
 from collections import defaultdict
 
 def load_raw(xlsx_path):
-    import pandas as pd, io
-    with tempfile.TemporaryDirectory() as td:
-        subprocess.run(['libreoffice','--headless','--convert-to','csv','--outdir',td, xlsx_path],
-                       capture_output=True, text=True, timeout=180)
-        csv_path = os.path.join(td, [f for f in os.listdir(td) if f.endswith('.csv')][0])
-        df = pd.read_csv(csv_path, low_memory=False)
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df['Month'] = df['Date'].dt.month
-    df['Title'] = df['Title'].fillna('').astype(str)
-    df['Full Text'] = df['Full Text'].fillna('').astype(str) if 'Full Text' in df.columns else ''
-    return df
+    # BW raw exports don't survive a LibreOffice CSV round-trip (inline strings +
+    # metadata block above the header). Read them directly; months are UK months.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _bw_raw import load_raw_df
+    return load_raw_df(xlsx_path)
 
 def norm_title(t):
     t = re.sub(r'[^a-z0-9\s]', ' ', t.lower())
@@ -61,13 +55,13 @@ def main():
     out_lines.append(f"# {args.carline} — Driver Menu, Month {args.new_month} vs {args.prior_month}\n")
 
     # === Volume MoM ===
-    out_lines.append("## Volume MoM (sorted by Δ)\n")
+    out_lines.append("## Volume MoM (sorted by Δ; COUNTUNIQUE(URL), UK months)\n")
     out_lines.append("| Model | Prior | New | Δ | Δ% |")
     out_lines.append("|---|---|---|---|---|")
     rows = []
     for q in queries:
-        n = len(new[new['Query Name']==q])
-        p = len(prior[prior['Query Name']==q])
+        n = new.loc[new['Query Name']==q, 'Url'].nunique()
+        p = prior.loc[prior['Query Name']==q, 'Url'].nunique()
         d = n - p
         dpct = d/p*100 if p else 0
         rows.append((q, p, n, d, dpct))
@@ -78,6 +72,7 @@ def main():
 
     # === Sentiment MoM ===
     out_lines.append("## Sentiment % MoM\n")
+    out_lines.append("Counts in brackets - cite them alongside % in bullets. Prior-month diamonds come from last month's published chart, not from these numbers.\n")
     out_lines.append("| Model | Pos new | Pos prior | Δpp | Neg new | Neg prior | Δpp |")
     out_lines.append("|---|---|---|---|---|---|---|")
     for q in queries:
@@ -88,7 +83,15 @@ def main():
         np_n = (np['Sentiment']=='negative').mean()*100
         pp_p = (pp['Sentiment']=='positive').mean()*100
         pp_n = (pp['Sentiment']=='negative').mean()*100
-        out_lines.append(f"| {q} | {np_p:.1f}% | {pp_p:.1f}% | {np_p-pp_p:+.1f} | {np_n:.1f}% | {pp_n:.1f}% | {np_n-pp_n:+.1f} |")
+        c = lambda d, v: int((d['Sentiment']==v).sum())
+        out_lines.append(f"| {q} | {np_p:.1f}% ({c(np,'positive')}) | {pp_p:.1f}% ({c(pp,'positive')}) | {np_p-pp_p:+.1f} "
+                         f"| {np_n:.1f}% ({c(np,'negative')}) | {pp_n:.1f}% ({c(pp,'negative')}) | {np_n-pp_n:+.1f} |")
+    out_lines.append("")
+    out_lines.append("Negative-driver rule: if a model's negative volume is < 30, use \"no clusters of issues were identified as drivers\".\n")
+    for q in queries:
+        nn = int(((new['Query Name']==q) & (new['Sentiment']=='negative')).sum())
+        flag = "< 30 -> standard phrase" if nn < 30 else ">= 30 -> look for a negative driver"
+        out_lines.append(f"- {q}: {nn} negative mentions ({flag})")
     out_lines.append("")
 
     # === Top drivers per model (news+blog clusters with ≥5 mentions) ===
@@ -129,7 +132,9 @@ def main():
     out_lines.append("| Country | New (all) | Δ (all) | New (news) | Δ (news) |")
     out_lines.append("|---|---|---|---|---|")
     cp = prior[prior['Query Name']==carline_query]
-    for country in ['Germany','United Kingdom','Spain','France','Italy','Netherlands','Norway']:
+    core = ['Germany','United Kingdom','Spain','France','Italy','Netherlands','Norway']
+    extra = [c for c, n in cn['Country'].value_counts().items() if c and c not in core and n >= 5]
+    for country in core + extra:
         n_all = len(cn[cn['Country']==country])
         p_all = len(cp[cp['Country']==country])
         n_news = len(cn[(cn['Country']==country) & (cn['Page Type']=='news')])
@@ -141,19 +146,19 @@ def main():
     out_lines.append("---\n")
     out_lines.append("## DRAFT BULLET MENU — analyst to confirm/edit\n")
     out_lines.append("Use the data above to fill these in. Each named driver MUST have a mention count.\n")
-    out_lines.append("### bullet1 (volume)\n")
+    out_lines.append("## bullet1\n")
     out_lines.append("> Mentions volume {direction} for {scope} from {prior month}, with Ford " + args.carline + " {Δ}, alongside ...\n")
-    out_lines.append("### bullet2 (drivers)\n")
-    out_lines.append(f"> {args.carline}'s {direction} was driven by news ({Δ}). Top driver: [STORY] ({count} mentions, {region}). Secondary driver: ...\n")
-    out_lines.append("### bullet3 (sentiment)\n")
+    out_lines.append("## bullet2\n")
+    out_lines.append(f"> {args.carline}'s {{direction}} was driven by news ({{Δ}}). Top driver: [LINK:STORY] ({{count}} mentions, {{region}}). Secondary driver: ...\n")
+    out_lines.append("## bullet3\n")
     out_lines.append(f"> {args.carline} sentiment ...\n")
-    out_lines.append("### hyperlinks\n")
+    out_lines.append("## hyperlinks\n")
     out_lines.append("| linked phrase | URL |")
     out_lines.append("|---|---|")
     out_lines.append("| Top story name | https://... |")
     out_lines.append("")
     out_lines.append("---\n")
-    out_lines.append("After analyst confirms, save as `menu_confirmed.md` and proceed to Stage 3.\n")
+    out_lines.append("Fill bullet1-3 (quote lines starting `> `) and the hyperlinks table in place; `write_bullets.py` reads the `## bullet1/2/3` and `## hyperlinks` sections of this file.\n")
 
     with open(args.out, 'w') as f:
         f.write('\n'.join(out_lines))

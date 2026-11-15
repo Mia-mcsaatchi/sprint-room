@@ -17,7 +17,7 @@ can be handed over or migrated without knowledge living only in someone's head.
 | [`skills/`](skills/) | The automation **skills** verbatim (SKILL.md + scripts + references) — the engine `monthly-run` calls |
 | [`process/`](process/) | Source-of-truth documents: the 6-phase process doc + the automation architecture PDF |
 | [`samples/`](samples/) | Small fixtures showing **table structure** (not datasets): the four chart-data exports + a structure-only raw-export header |
-| [`tools/`](tools/) | Reusable utilities (e.g. `bw_read.py`, the reliable Brandwatch parser) |
+| [`tools/`](tools/) | Reusable utilities (`bw_read.py`, the reliable Brandwatch parser; `noise_scan.py`, the boolean-noise flagger) |
 | [`MIGRATION.md`](MIGRATION.md) | How to stand this up on a new machine / onboard a new analyst |
 
 ## Running a month (the point of this repo)
@@ -27,6 +27,7 @@ cd monthly-run
 python3 run.py newmonth --carline Kuga --month 2026-07   # scaffold + list the 6 files to drop in
 python3 run.py doctor   --carline Kuga --month 2026-07   # confirm inputs
 python3 run.py validate --carline Kuga --month 2026-07
+python3 run.py noise    --carline Kuga --month 2026-07   # flag boolean noise (Phase 1 aid)
 python3 run.py menu     --carline Kuga --month 2026-07   # ← approve the bullet menu (hard gate)
 python3 run.py skeleton --carline Kuga --month 2026-07 --report-date 17.08.2026
 python3 run.py fixskeleton --carline Kuga --month 2026-07

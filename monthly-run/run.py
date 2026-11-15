@@ -21,6 +21,7 @@ Typical cycle
     # (drop the six exports into the inputs folder it printed)
     python run.py doctor    --carline Kuga --month 2026-07
     python run.py validate  --carline Kuga --month 2026-07
+    python run.py noise     --carline Kuga --month 2026-07     # flag boolean noise
     python run.py menu      --carline Kuga --month 2026-07
     #   ---- HARD GATE: review & approve work/.../menu.md ----
     python run.py skeleton  --carline Kuga --month 2026-07
@@ -123,6 +124,20 @@ def stage_validate(a):
            "--country", inp / "chart_country.xlsx", "--platform", inp / "chart_platform.xlsx",
            "--sent", inp / "chart_sentiment.xlsx", "--last-month", inp / "last_month.pptx"]
     return run(cmd, a.dry_run)
+
+def stage_noise(a):
+    """Phase 1 aid: flag likely boolean noise in the carline query (flags only, never excludes)."""
+    inp, work = paths(a.carline, a.month)
+    work.mkdir(parents=True, exist_ok=True)
+    out = work / "noise_review.csv"
+    terms = cfg(a.carline).get("brand_terms", ["ford"])
+    cmd = ["python3", REPO / "tools" / "noise_scan.py", inp / "raw.xlsx", "--carline", a.carline,
+           "--brand-terms", *terms, "--out", out]
+    rc = run(cmd, a.dry_run)
+    if rc == 0 and not a.dry_run:
+        say(f"\nReview {out}. If noise is material, add NOT-terms in Brandwatch (Phase 1) and "
+            "re-export raw + chart files before `menu`.", "y")
+    return rc
 
 def stage_menu(a):
     inp, work = paths(a.carline, a.month)
@@ -271,6 +286,7 @@ def stage_pack(a):
 
 STAGES = {
     "newmonth": stage_newmonth, "doctor": stage_doctor, "validate": stage_validate,
+    "noise": stage_noise,
     "menu": stage_menu, "skeleton": stage_skeleton, "fixskeleton": stage_fixskeleton,
     "roles": stage_roles, "charts": stage_charts, "bullets": stage_bullets,
     "embed": stage_embed, "pack": stage_pack,
