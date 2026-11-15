@@ -17,7 +17,7 @@ can be handed over or migrated without knowledge living only in someone's head.
 | [`skills/`](skills/) | The automation **skills** verbatim (SKILL.md + scripts + references) — the engine `monthly-run` calls |
 | [`process/`](process/) | Source-of-truth documents: the 6-phase process doc + the automation architecture PDF |
 | [`samples/`](samples/) | Small fixtures showing **table structure** (not datasets): the four chart-data exports + a structure-only raw-export header |
-| [`tools/`](tools/) | Reusable utilities (e.g. `bw_read.py`, the reliable Brandwatch parser) |
+| [`tools/`](tools/) | Reusable utilities: `bw_read.py` (reliable Brandwatch parser), `rollforward_deck.py` (in-place monthly roll-forward for decks with embedded chart data, e.g. Puma — `run.py rollforward`) |
 | [`MIGRATION.md`](MIGRATION.md) | How to stand this up on a new machine / onboard a new analyst |
 
 ## Running a month (the point of this repo)
@@ -61,7 +61,7 @@ Read [`docs/workflow-phases.md`](docs/workflow-phases.md) first, then
 | **Explorer** | EU7 | Skoda Enyaq, VW ID.4, Renault Megane E-Tech, Peugeot E-3008, Volvo XC40 Recharge/EX40 |
 | **Capri** | EU7 | Peugeot E-3008, VW ID.5, Skoda Enyaq Coupe, Polestar 2, Audi Q4 Sportback e-tron, Kia EV6 |
 
-> Competitor counts differ (Puma tracks five, not six). Never assume the Explorer set —
+> Competitor counts differ (Puma tracks four competitors, Capri six). Never assume the Explorer set —
 > read the actual competitor names from the deck's `chart3.xml` `<c:cat>` strings each cycle.
 
 ## Skills index

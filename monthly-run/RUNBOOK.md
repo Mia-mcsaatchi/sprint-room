@@ -94,6 +94,30 @@ python3 run.py embed   --carline Kuga --month 2026-07     # patch chart mapping 
 python3 run.py pack    --carline Kuga --month 2026-07     # → work/.../Kuga_Social_Media_July_2026_Sprint_Room.pptx
 ```
 
+## 4–6 alternative: `rollforward` (decks with embedded chart data, e.g. Puma)
+
+If the carline's config has `"embedded_chart_data": true` (Puma since 2026), skip steps 4–6.
+The Puma deck's charts already embed their own xlsx, its sentiment diamonds are named after
+the prior month ("Positive September"), and its sheets are `Sheet1`/`Puma`, so the skill's
+skeleton/charts/embed scripts don't fit. Instead:
+
+1. Write `work/<C>/<M>/spec.json` from the **approved** menu: the new month's volume per
+   series, country and platform counts, sentiment shares per competitor, the three bullets
+   (`[text, url|null]` runs) and the notes paragraphs. Format: docstring of
+   [`../tools/rollforward_deck.py`](../tools/rollforward_deck.py).
+2. Build:
+
+```bash
+python3 run.py rollforward --carline Puma --month 2026-10
+```
+
+It rotates the deck in place (latest slide becomes the comparison slide byte-for-byte; the
+oldest is dropped), carries earlier volume months and the diamonds from the **published**
+deck, writes every value into both the chart cache and its embedded xlsx, and updates the
+subtitle, title-slide month/date, bullets (bold inline hyperlinks) and notes. No manual
+OOXML fixes are needed. Then validate (`office/validate.py --original last_month.pptx`) and
+render as in step 7.
+
 ## 7. QA & deliver (manual — Phase 6)
 
 Render to PDF, eyeball the four charts (ignore the documented LibreOffice-only quirks in

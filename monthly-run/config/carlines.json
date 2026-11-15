@@ -28,8 +28,9 @@
     "segment": "EU5",
     "competitors": ["Peugeot 2008", "Toyota Yaris Cross", "Hyundai Kona", "VW T-Cross"],
     "chart_roles": {"volume": "chart9", "country": "chart10", "platform": "chart11", "sentiment": "chart12"},
-    "sentiment_series_casing": {"positive_pre": "positive pre", "negative_pre": "Negative Pre"},
-    "verify_chart_roles": true,
-    "notes": "EU5; 4 competitors (NOT 6). Chart order is known to be swapped from the Explorer template (source deck has platform/sentiment in different positions). The chart_roles above are a PLACEHOLDER - run `roles` to confirm against the real skeleton before running `charts`. build_skeleton EU7 subtitle bug applies here too."
+    "sentiment_series_casing": {"positive_pre": "Positive <PriorMonth>", "negative_pre": "Negative <PriorMonth>"},
+    "verify_chart_roles": false,
+    "embedded_chart_data": true,
+    "notes": "EU5; 4 competitors + Puma = 5 sentiment bars (Y coords 3,9,15,21,27). Verified on the Sep 2026 deck: latest slide = chart1 volume, chart2 country, chart3 platform, chart4 sentiment (so the skeleton's chart9-12 map as above). Charts already embed their own xlsx (sheets 'Sheet1' x3, 'Puma' for sentiment) and the diamond series are named after the prior month ('Positive September'), so the skill's update/embed scripts don't fit: use `run.py rollforward` (tools/rollforward_deck.py) instead of skeleton/charts/bullets/embed/pack."
   }
 }

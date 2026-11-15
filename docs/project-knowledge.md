@@ -43,6 +43,14 @@ Brandwatch dashboard work is done in two passes:
   authoritative sentiment source when available.
 - **Carry-forward rule:** in a new month's build, the prior month's data is left entirely
   untouched and carried forward from the *published* prior-month deck — never re-derived.
+- **Puma conventions (Sep/Oct 2026 builds):** WRC / Puma Rally1 / M-Sport coverage stays in
+  Puma volume (July direction) and is quantified in the notes on a keyword rule
+  (rally / WRC / Rally1 / M-Sport / Sainz). Since September, rally and passing items are left
+  as tagged in Brandwatch (August had them set to neutral), so the chart matches Brandwatch;
+  the notes give the "excluding rally and non-car" comparison, and the outstanding retags /
+  removals go in a `Puma_<Mon><YYYY>_BW_actions.xlsx` list for the analyst. Puma Gen-E
+  mentions picked up by the Puma query stay in volume (the separate Gen-E dashboard is the
+  out-of-scope one).
 - **Open watch-item:** the Capri/Explorer towing PR query asymmetry (Capri's `NEAR/5` operator
   catching fewer articles) may need revisiting in a future cycle.
 
