@@ -58,28 +58,24 @@ def main():
 
     # 1. Raw data: convert and check
     print(f"\n=== Raw data ({args.raw}) ===")
-    csv_text = parse_xlsx_to_csv(args.raw)
-    if csv_text is None:
-        issues.append(f"Could not convert {args.raw} to CSV")
-    else:
-        import pandas as pd, io
-        df = pd.read_csv(io.StringIO(csv_text), low_memory=False)
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df['Month'] = df['Date'].dt.month
-        if 'Query Name' not in df.columns:
-            issues.append("raw.xlsx missing 'Query Name' column")
-        else:
-            queries = df['Query Name'].unique()
-            info.append(f"Raw data: {len(df)} rows, {len(queries)} queries: {sorted(queries)}")
-            if args.carline not in queries and not any(args.carline in str(q) for q in queries):
-                issues.append(f"Carline '{args.carline}' not found in Query Name column. Got: {sorted(queries)}")
-            if len(queries) != 6:
-                issues.append(f"Expected 6 queries (1 carline + 5 competitors), got {len(queries)}")
-            # Month coverage
-            month_counts = df.groupby('Month').size().to_dict()
-            info.append(f"Rows per month: {month_counts}")
-            if len(month_counts) < 2:
-                issues.append("Raw data covers only one month — need new + prior month")
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from _bw_raw import load_raw_df   # BW raw needs the inline-string reader, not a CSV round-trip
+        df = load_raw_df(args.raw)        # Month = UK month (Date is UTC)
+    except Exception as e:
+        df = None
+        issues.append(f"Could not read {args.raw}: {e}")
+    if df is not None:
+        queries = df['Query Name'].unique()
+        info.append(f"Raw data: {len(df)} rows, {len(queries)} queries: {sorted(queries)}")
+        if not any(args.carline.lower() in str(q).lower() for q in queries):
+            issues.append(f"Carline '{args.carline}' not found in Query Name column. Got: {sorted(queries)}")
+        if len(queries) < 5:
+            issues.append(f"Expected 1 carline + its competitors (5-7 queries), got {len(queries)}")
+        month_counts = df.groupby('Month').size().to_dict()
+        info.append(f"Rows per UK month: {month_counts}")
+        if len(month_counts) < 2:
+            issues.append("Raw data covers only one month — need new + prior month")
 
     # 2. Volume chart: 4th column should be the new month
     print(f"\n=== Volume chart export ({args.vol}) ===")

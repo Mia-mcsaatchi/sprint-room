@@ -18,7 +18,13 @@ CSV. Use direct `zipfile` + `lxml iterparse` on `xl/worksheets/sheet1.xml`:
 - **Big files (80MB+):** stream with `iterparse` and call `row.clear()` after each row to avoid
   memory exhaustion.
 
-A ready-made implementation is in [`../tools/bw_read.py`](../tools/bw_read.py):
+- **Month bucketing:** the raw `Date` column is **UTC**, but reporting months are **UK months**
+  (the export's `From:` reads e.g. `Mon Aug 31 23:00:00 UTC` = 1 Sep 00:00 BST). Convert to
+  `Europe/London` before taking the month, or late-evening mentions on the last day of a BST
+  month land in the wrong month. Same root cause as the volume chart's `23:00:00` column label.
+
+The skill scripts read raw exports through `skills/sprint-room-monthly-update/scripts/_bw_raw.py`
+(streaming reader + UK-month bucketing). A ready-made standalone implementation is in [`../tools/bw_read.py`](../tools/bw_read.py):
 
 ```bash
 python3 tools/bw_read.py FILE.xlsx --querydist   # validate contents by Query Name
