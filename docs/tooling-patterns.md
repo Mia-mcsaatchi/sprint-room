@@ -25,6 +25,27 @@ python3 tools/bw_read.py FILE.xlsx --querydist   # validate contents by Query Na
 python3 tools/bw_read.py FILE.xlsx --head 20
 ```
 
+## When only the raw export arrives (no chart-data exports)
+
+The raw Bulk Mentions export can stand in for the four chart exports. Bucket `Date` (UTC) into
+**Europe/London** local time. The export's `From` is `… 23:00 UTC` of the previous day, which is
+midnight BST. Then count rows (each row is a unique URL) per `Query Name` × month. Take country from
+`Country Code` and platform from `Page Type Name`.
+
+*Checked in the Kuga Oct 2026 cycle:* the raw export reproduced September's **published** volumes to
+within ±2 for every model (Kuga 540 vs 538, Tiguan 754 vs 753, Bigster 945 vs 943, Jaecoo 766 vs 765,
+3008 405 vs 406, Tucson 523 vs 523). Run the same check every time you use this fallback. Earlier
+months on the line chart and the sentiment diamonds still come from last month's published chart.
+
+Watch-outs seen in Oct 2026:
+- **Sentiment may not be retagged yet.** Machine tags left owner praise tagged negative, and a UK
+  "SUV tax" repost storm citing the Kuga came through as 36 negatives. Flag this rather than ship it.
+- **Boolean noise is visible in the raw export:** German food/spice recall pages (Aldi, Lebensbaum,
+  Milumil; c.71) were in the VW Tiguan query.
+- **Shared syndications appear under several queries.** The German Tucson launch piece ("Größer,
+  kantiger…") appeared under Kuga (61), Tiguan (58) and Tucson (61). For Kuga and Tiguan it is a
+  passing mention.
+
 ## OOXML deck manipulation
 
 Unpack via `unzip`, manipulate the XML directly (lxml for charts, regex for slide text and

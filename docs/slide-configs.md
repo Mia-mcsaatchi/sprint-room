@@ -30,6 +30,29 @@ chart12=platform`. Other carlines do **not** follow this. Known mappings:
 | **Capri** | **Platform** | **Country** | **Sentiment** | EU7; 6 competitors |
 | **Puma** | order swapped from Explorer template (`chart3=platform`, `chart4=sentiment`) | | | EU5; **5 competitors, not 6** |
 
+### Kuga — layout of the delivered deck (confirmed on the September 2026 deck)
+
+The delivered Kuga deck does **not** use the chart9–12 numbering or the Explorer workbook layout.
+Read from `Kuga_Social_Media_September_2026_Sprint_Room.pptx`:
+
+| Slide | Charts | Embedded workbooks |
+|-------|--------|--------------------|
+| slide2 = latest month | chart1 volume, chart2 country, chart3 platform, chart4 sentiment | `Microsoft_Excel_Worksheet.xlsx`, `…1`, `…2`, `…3` |
+| slide3 = month before | chart5–8 (same order) | `…4` – `…7` |
+
+- **Volume:** sheet `'Kuga - 2'`, `A11=months`, `B11:E11` months, `A12:A17` = Tiguan, 3008, Tucson,
+  Jaecoo 7, Kuga, Bigster; `A18` Average (`=AVERAGE(B12:B17)`).
+- **Country / platform pies:** sheet `Sheet1`, `A12:B16` (UK, ES, DE, IT, FR) and `A12:B17`
+  (Forums, Online News, X, Review, Blogs, Tumblr).
+- **Sentiment:** sheet `Kuga`, competitors in **`K11:P11`** (Tucson, Jaecoo 7, Bigster, 3008, Tiguan, Kuga),
+  pos/neu/neg in `K12:P14`, Y coords in `K17:P17` = **`[2.6, 7.6, 12.6, 17.6, 22.6, 27.6]`**,
+  `Positive Pre` in `K19:P19`, `Negative Pre` (= 1 − prior negative) in `K21:P21`.
+- Content-Types uses `<Default Extension="xlsx">`, so no per-file `<Override>` is needed.
+
+To roll this deck forward, overwrite the oldest slide's parts (slide3, charts 5–8, workbooks 4–7,
+notesSlide2) and reorder `sldIdLst`. Because the part names are reused, there are no orphaned rels or
+Content-Types entries and the notes link is kept. `tools/rollforward_from_spec.py` does this.
+
 > **The `embed_backing_xlsx.py` chart→xlsx mapping must be patched per carline before running.**
 > Don't assume the Explorer order. Confirm each chart's role by reading its `<c:f>` cell
 > references / category strings in the actual deck.

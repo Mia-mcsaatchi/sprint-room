@@ -17,7 +17,7 @@ can be handed over or migrated without knowledge living only in someone's head.
 | [`skills/`](skills/) | The automation **skills** verbatim (SKILL.md + scripts + references) — the engine `monthly-run` calls |
 | [`process/`](process/) | Source-of-truth documents: the 6-phase process doc + the automation architecture PDF |
 | [`samples/`](samples/) | Small fixtures showing **table structure** (not datasets): the four chart-data exports + a structure-only raw-export header |
-| [`tools/`](tools/) | Reusable utilities (e.g. `bw_read.py`, the reliable Brandwatch parser) |
+| [`tools/`](tools/) | Reusable utilities: `bw_read.py` (reliable Brandwatch parser), `rollforward_from_spec.py` (roll a delivered deck forward one month from a JSON spec, reusing the oldest slide's parts) |
 | [`MIGRATION.md`](MIGRATION.md) | How to stand this up on a new machine / onboard a new analyst |
 
 ## Running a month (the point of this repo)
