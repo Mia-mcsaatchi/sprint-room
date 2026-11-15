@@ -28,7 +28,24 @@ chart12=platform`. Other carlines do **not** follow this. Known mappings:
 | **Explorer** (skill default) | Country | Sentiment | Platform | volume = chart9; 5 competitors |
 | **Kuga** | **Country** | **Platform** | **Sentiment** | EU5 |
 | **Capri** | **Platform** | **Country** | **Sentiment** | EU7; 6 competitors |
-| **Puma** | order swapped from Explorer template (`chart3=platform`, `chart4=sentiment`) | | | EU5; **5 competitors, not 6** |
+| **Puma** | **Country** | **Platform** | **Sentiment** | EU5; 4 competitors + Puma = **5** sentiment bars. Verified Oct 2026 (latest slide: chart1 volume, chart2 country, chart3 platform, chart4 sentiment) |
+
+### Puma template specifics (verified on the September 2026 deck)
+
+- Charts **already embed** their own xlsx (`ppt/embeddings/Microsoft_Excel_Worksheet*.xlsx`,
+  relationship type `.../package`), and `[Content_Types].xml` uses `<Default Extension="xlsx">`.
+  No embedding stage is needed — use `run.py rollforward` / `tools/rollforward_deck.py`.
+- Sheet names: `Sheet1` for volume, country and platform; `Puma` for sentiment.
+- Volume: `A11:E11` months, `A12:A16` Puma, Yaris Cross, 2008, Kona, T-Cross; `A17` Average
+  (`=AVERAGE(B12:B16)`, over all five lines including Puma).
+- Country pie: `A12:B16` in fixed order UK, ES, IT, FR, DE (order is kept month to month so
+  slice colours stay stable; "other/unknown" is not plotted).
+- Platform pie: `A12:B16` in fixed order Online News, Forums, X, Blogs, Review (Tumblr not
+  plotted).
+- Sentiment: categories `J11:N11` = Hyundai Kona, Peugeot 2008, Toyota Yaris Cross,
+  VW T-Cross, Ford Puma; bars `J12:N14`; Y coords `J17:N17` = `[3, 9, 15, 21, 27]`;
+  diamonds `J19:N19` (prior positive %) and `J21:N21` (1 − prior negative %), series named
+  **"Positive &lt;prior month&gt;" / "Negative &lt;prior month&gt;"** (renamed each cycle).
 
 > **The `embed_backing_xlsx.py` chart→xlsx mapping must be patched per carline before running.**
 > Don't assume the Explorer order. Confirm each chart's role by reading its `<c:f>` cell

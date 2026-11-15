@@ -269,11 +269,34 @@ def stage_pack(a):
     return rc
 
 
+def stage_rollforward(a):
+    """Fast path for decks whose charts already embed their xlsx (e.g. Puma).
+
+    Rotates last month's deck in place (latest slide -> comparison slide, oldest dropped)
+    and fills the new month from work/<C>/<M>/spec.json - replaces skeleton, fixskeleton,
+    charts, bullets, embed and pack. Write spec.json from the APPROVED menu only.
+    """
+    inp, work = paths(a.carline, a.month)
+    yr, mm, _ = month_parts(a.month)
+    spec = work / "spec.json"
+    if not a.dry_run:
+        need(inp / "last_month.pptx", "last month's deck")
+        need(spec, "spec.json (chart values + approved bullets/notes; see tools/rollforward_deck.py)")
+    out = work / f"{a.carline}_Social_Media_{MONTHS[mm]}_{yr}_Sprint_Room.pptx"
+    cmd = ["python3", REPO / "tools" / "rollforward_deck.py", "--last", inp / "last_month.pptx",
+           "--spec", spec, "--out", out]
+    rc = run(cmd, a.dry_run)
+    if rc == 0 and not a.dry_run:
+        say(f"\nBuilt: {out}", "g")
+        say("Validate + render it, then deliver per docs/workflow-phases.md Phase 6.", "g")
+    return rc
+
+
 STAGES = {
     "newmonth": stage_newmonth, "doctor": stage_doctor, "validate": stage_validate,
     "menu": stage_menu, "skeleton": stage_skeleton, "fixskeleton": stage_fixskeleton,
     "roles": stage_roles, "charts": stage_charts, "bullets": stage_bullets,
-    "embed": stage_embed, "pack": stage_pack,
+    "embed": stage_embed, "pack": stage_pack, "rollforward": stage_rollforward,
 }
 
 
