@@ -128,10 +128,10 @@ The script reads the menu (markdown format with sections `## bullet1`, `## bulle
 - No explicit color or underline rPr — PowerPoint picks up the hyperlink theme color and underlines automatically when `<a:hlinkClick>` is present.
 - The relationship ID is unique per slide and added to `slide4.xml.rels` with `Type=".../hyperlink"`, `Target=<url>`, `TargetMode="External"`.
 
-The script also updates the notes slide:
-- Country breakdowns (all and news-only) — pulled from the raw data
-- Insight 3 sentiment-source-by-page-type — pulled from the raw data using the new sentiment tags
-- Closing commentary paragraph — written from the menu
+The script does **not** write the notes slide. Put the notes in a `## notes` section of the menu (country breakdowns all/news-only and Insight 3 sentiment-by-page-type come from the `extract_drivers.py` output, plus competitor detail and closing commentary) and paste them into the new slide's notes by hand:
+- Country breakdowns (all and news-only), from the raw data
+- Insight 3 sentiment-source-by-page-type, from the raw data using the new sentiment tags
+- Closing commentary paragraph, written from the menu
 
 ## Stage 6 — Embed editable backing xlsx files
 
